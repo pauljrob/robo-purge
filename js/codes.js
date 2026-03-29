@@ -21,6 +21,7 @@ const CODE_REGISTRY = new Map([
     ['MATRIX',      { type: 'modifier', id: 'slowmo',     name: 'Slow Motion Enemies' }],
     ['AIMBOT',      { type: 'modifier', id: 'aimbot',     name: 'Auto-Aim Aimbot' }],
     ['BAN',         { type: 'instant',  id: 'ban',       name: 'BAN HAMMER - Kill All Bots!' }],
+    ['BOSS_MODE',   { type: 'weapon',   id: 'bossmode',  name: 'BOSS MODE - One Shot Kill' }],
 ]);
 
 export function validateCode(input) {

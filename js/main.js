@@ -196,7 +196,7 @@ function update(dt) {
     }
 
     // Weapon switching
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
         if (wasKeyPressed(`${i + 1}`)) {
             const order = getWeaponOrder();
             const wep = WEAPONS[order[i]];

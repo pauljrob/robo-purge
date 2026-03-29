@@ -84,9 +84,24 @@ export const WEAPONS = {
         explosive: false,
         locked: true,
     },
+    bossmode: {
+        id: 'bossmode',
+        name: 'BOSS MODE',
+        fireRate: 0.5,
+        damage: 9999,
+        bulletSpeed: 1500,
+        bullets: 1,
+        spread: 0,
+        color: '#f00',
+        bulletSize: 10,
+        piercing: true,
+        explosive: true,
+        explosionRadius: 120,
+        locked: true,
+    },
 };
 
-const weaponOrder = ['pistol', 'machinegun', 'shotgun', 'railgun', 'plasma', 'laser'];
+const weaponOrder = ['pistol', 'machinegun', 'shotgun', 'railgun', 'plasma', 'laser', 'bossmode'];
 
 export function getWeapon(id) {
     return WEAPONS[id];
