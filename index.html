@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROBO PURGE</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <div id="code-overlay" class="hidden">
+            <div id="code-box">
+                <h2>ENTER SECRET CODE</h2>
+                <input type="text" id="code-input" autocomplete="off" spellcheck="false" placeholder="Type a code...">
+                <p id="code-feedback"></p>
+                <p class="hint">Press ENTER to submit or ESC to skip</p>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
