@@ -3,6 +3,8 @@ let mouseX = 0;
 let mouseY = 0;
 let mouseDown = false;
 let canvas = null;
+let autoShoot = false;
+let lastShiftTime = 0;
 
 export function initInput(canvasEl) {
     canvas = canvasEl;
@@ -10,6 +12,17 @@ export function initInput(canvasEl) {
     window.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key.startsWith('Arrow')) e.preventDefault();
         keys.set(e.key.toLowerCase(), true);
+
+        // Double-tap shift to toggle auto shoot
+        if (e.key === 'Shift') {
+            const now = Date.now();
+            if (now - lastShiftTime < 400) {
+                autoShoot = !autoShoot;
+                lastShiftTime = 0;
+            } else {
+                lastShiftTime = now;
+            }
+        }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -42,5 +55,13 @@ export function getMousePos() {
 }
 
 export function isShooting() {
-    return mouseDown || keys.get(' ') || false;
+    return autoShoot || mouseDown || keys.get(' ') || false;
+}
+
+export function isAutoShoot() {
+    return autoShoot;
+}
+
+export function resetAutoShoot() {
+    autoShoot = false;
 }

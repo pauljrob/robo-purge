@@ -3,6 +3,7 @@ import { player } from './player.js';
 import { getWeapon, getWeaponOrder, WEAPONS } from './weapons.js';
 import { getCurrentWave, getEnemiesRemaining } from './waves.js';
 import { getUnlocked } from './codes.js';
+import { isAutoShoot } from './input.js';
 import { isMuted } from './audio.js';
 
 export function renderHUD(ctx, score) {
@@ -76,6 +77,11 @@ export function renderHUD(ctx, score) {
 
     // Code entry hint
     drawText('[C] ENTER CODE', 400, 590, '#0a0', 11, 'center');
+
+    // Auto shoot indicator
+    if (isAutoShoot()) {
+        drawText('AUTO-FIRE ON', 785, 565, '#f80', 10, 'right');
+    }
 
     // Mute indicator
     if (isMuted()) {
