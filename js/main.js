@@ -7,7 +7,7 @@ import { updateParticles, renderParticles, clearParticles } from './particles.js
 import { spawnExplosion } from './particles.js';
 import { circleVsCircle } from './collision.js';
 import { startWave, updateWaveSpawning, isWaveComplete, getCurrentWave, stopWave } from './waves.js';
-import { validateCode, isUnlocked, applyUnlock, isSlowMoActive, resetUnlocks } from './codes.js';
+import { validateCode, isUnlocked, applyUnlock, isSlowMoActive, resetUnlocks, getAllCodes } from './codes.js';
 import { getWeaponOrder, WEAPONS } from './weapons.js';
 import { renderHUD } from './hud.js';
 import { playShoot, playEnemyHit, playEnemyDeath, playPlayerHit, playUnlock, playWaveComplete, toggleMute } from './audio.js';
@@ -24,6 +24,11 @@ const ctx = canvas.getContext('2d');
 const codeOverlay = document.getElementById('code-overlay');
 const codeInput = document.getElementById('code-input');
 const codeFeedback = document.getElementById('code-feedback');
+
+// Codes list UI
+const codesListOverlay = document.getElementById('codes-list-overlay');
+const codesListContent = document.getElementById('codes-list-content');
+let codesListOpen = false;
 
 // Game state
 let state = 'MENU';
@@ -70,6 +75,27 @@ function openCodeEntry() {
 
 function closeCodeEntry() {
     codeOverlay.classList.add('hidden');
+    state = 'PLAYING';
+}
+
+function openCodesList() {
+    codesListOpen = true;
+    state = 'CODES_LIST';
+    codesListContent.innerHTML = '';
+    const allCodes = getAllCodes();
+    for (const [code, unlock] of allCodes) {
+        const unlocked = isUnlocked(unlock.id);
+        const div = document.createElement('div');
+        div.className = 'code-entry' + (unlocked ? ' unlocked' : '');
+        div.innerHTML = `<span class="code-name">${code}</span><span class="code-desc">${unlock.name}</span>`;
+        codesListContent.appendChild(div);
+    }
+    codesListOverlay.classList.remove('hidden');
+}
+
+function closeCodesList() {
+    codesListOpen = false;
+    codesListOverlay.classList.add('hidden');
     state = 'PLAYING';
 }
 
@@ -132,6 +158,13 @@ function update(dt) {
         return;
     }
 
+    if (state === 'CODES_LIST') {
+        if (wasKeyPressed('k') || wasKeyPressed('escape')) {
+            closeCodesList();
+        }
+        return;
+    }
+
     if (state !== 'PLAYING') return;
 
     // Mute toggle
@@ -140,6 +173,12 @@ function update(dt) {
     // Open code entry with C
     if (wasKeyPressed('c')) {
         openCodeEntry();
+        return;
+    }
+
+    // Open codes list with K
+    if (wasKeyPressed('k')) {
+        openCodesList();
         return;
     }
 
@@ -359,7 +398,7 @@ function renderMenu() {
     drawText('CONTROLS:', 400, 310, '#888', 14, 'center');
     drawText('WASD - Move    |    Arrows/Mouse - Aim & Shoot', 400, 335, '#666', 12, 'center');
     drawText('1-6 - Switch Weapons    |    C - Enter Code', 400, 355, '#666', 12, 'center');
-    drawText('M - Mute', 400, 375, '#666', 12, 'center');
+    drawText('K - Code List    |    M - Mute', 400, 375, '#666', 12, 'center');
 
     // Robot preview
     drawCircle(320, 430, 12, '#888'); // drone
