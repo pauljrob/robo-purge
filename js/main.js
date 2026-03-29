@@ -94,12 +94,12 @@ codeInput.addEventListener('keydown', (e) => {
         } else if (unlock.type === 'instant') {
             // BAN - kill all enemies
             const enemies = getEnemies();
-            for (const e of enemies) {
-                if (!e.active) continue;
-                score += e.points;
-                spawnExplosion(e.x, e.y, '#f00', 15, 200, 4, 0.6);
+            for (const enemy of enemies) {
+                if (!enemy.active) continue;
+                score += enemy.points;
+                spawnExplosion(enemy.x, enemy.y, '#f00', 15, 200, 4, 0.6);
                 playEnemyDeath();
-                e.active = false;
+                enemy.active = false;
             }
             codeFeedback.textContent = `${unlock.name}`;
             codeFeedback.className = 'success';
