@@ -176,6 +176,19 @@ function update(dt) {
         return;
     }
 
+    // Shift+K - enable all codes
+    if (isKeyDown('shift') && wasKeyPressed('k')) {
+        const allCodes = getAllCodes();
+        for (const [code, unlock] of allCodes) {
+            if (unlock.type !== 'instant' && !isUnlocked(unlock.id)) {
+                applyUnlock(unlock);
+            }
+        }
+        playUnlock();
+        triggerShake(10);
+        return;
+    }
+
     // Open codes list with K
     if (wasKeyPressed('k')) {
         openCodesList();
