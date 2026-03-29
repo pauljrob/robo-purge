@@ -74,8 +74,8 @@ export function renderHUD(ctx, score) {
         iconX -= 22;
     }
 
-    // Code entry hints
-    drawText('[C] ENTER CODE    [K] CODE LIST', 400, 590, '#0a0', 11, 'center');
+    // Code entry hint
+    drawText('[C] ENTER CODE', 400, 590, '#0a0', 11, 'center');
 
     // Mute indicator
     if (isMuted()) {

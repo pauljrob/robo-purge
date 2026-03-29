@@ -398,7 +398,7 @@ function renderMenu() {
     drawText('CONTROLS:', 400, 310, '#888', 14, 'center');
     drawText('WASD - Move    |    Arrows/Mouse - Aim & Shoot', 400, 335, '#666', 12, 'center');
     drawText('1-6 - Switch Weapons    |    C - Enter Code', 400, 355, '#666', 12, 'center');
-    drawText('K - Code List    |    M - Mute', 400, 375, '#666', 12, 'center');
+    drawText('M - Mute', 400, 375, '#666', 12, 'center');
 
     // Robot preview
     drawCircle(320, 430, 12, '#888'); // drone
