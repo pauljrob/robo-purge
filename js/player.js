@@ -102,7 +102,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
 
     // Shooting
     player.fireCooldown -= dt;
-    if ((isShooting() || arrowAiming) && player.fireCooldown <= 0) {
+    if ((isShooting() || arrowAiming || player.aimbot) && player.fireCooldown <= 0) {
         const weapon = getWeapon(player.weapon);
         if (weapon) {
             player.fireCooldown = 1 / weapon.fireRate;
