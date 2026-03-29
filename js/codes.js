@@ -22,6 +22,7 @@ const CODE_REGISTRY = new Map([
     ['AIMBOT',      { type: 'modifier', id: 'aimbot',     name: 'Auto-Aim Aimbot' }],
     ['BAN',         { type: 'instant',  id: 'ban',       name: 'BAN HAMMER - Kill All Bots!' }],
     ['BOSS_MODE',   { type: 'weapon',   id: 'bossmode',  name: 'BOSS MODE - One Shot Kill' }],
+    ['SKIP',        { type: 'instant',  id: 'skip',      name: 'Skip Wave!' }],
 ]);
 
 export function validateCode(input) {

@@ -118,14 +118,27 @@ codeInput.addEventListener('keydown', (e) => {
             codeFeedback.className = 'error';
             codeInput.value = '';
         } else if (unlock.type === 'instant') {
-            // BAN - kill all enemies
-            const enemies = getEnemies();
-            for (const enemy of enemies) {
-                if (!enemy.active) continue;
-                score += enemy.points;
-                spawnExplosion(enemy.x, enemy.y, '#f00', 15, 200, 4, 0.6);
-                playEnemyDeath();
-                enemy.active = false;
+            if (unlock.id === 'skip') {
+                // SKIP - clear wave and jump to next
+                const enemies = getEnemies();
+                for (const enemy of enemies) {
+                    if (!enemy.active) continue;
+                    enemy.active = false;
+                    spawnExplosion(enemy.x, enemy.y, '#0ff', 10, 150, 3, 0.4);
+                }
+                stopWave();
+                waveNum++;
+                startWave(waveNum, ARENA_W, ARENA_H);
+            } else {
+                // BAN - kill all enemies for points
+                const enemies = getEnemies();
+                for (const enemy of enemies) {
+                    if (!enemy.active) continue;
+                    score += enemy.points;
+                    spawnExplosion(enemy.x, enemy.y, '#f00', 15, 200, 4, 0.6);
+                    playEnemyDeath();
+                    enemy.active = false;
+                }
             }
             codeFeedback.textContent = `${unlock.name}`;
             codeFeedback.className = 'success';
