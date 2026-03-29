@@ -27,6 +27,14 @@ const CODE_REGISTRY = new Map([
 
 export function validateCode(input) {
     const code = input.trim().toUpperCase();
+
+    // Support "SKIP 5", "SKIP 10", etc.
+    const skipMatch = code.match(/^SKIP\s+(\d+)$/);
+    if (skipMatch) {
+        const num = parseInt(skipMatch[1], 10);
+        return { type: 'instant', id: 'skip', name: `Skip ${num} Waves!`, skipCount: num };
+    }
+
     return CODE_REGISTRY.get(code) || null;
 }
 

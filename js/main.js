@@ -119,7 +119,8 @@ codeInput.addEventListener('keydown', (e) => {
             codeInput.value = '';
         } else if (unlock.type === 'instant') {
             if (unlock.id === 'skip') {
-                // SKIP - clear wave and jump to next
+                // SKIP - clear wave and jump ahead
+                const skipCount = unlock.skipCount || 1;
                 const enemies = getEnemies();
                 for (const enemy of enemies) {
                     if (!enemy.active) continue;
@@ -127,7 +128,7 @@ codeInput.addEventListener('keydown', (e) => {
                     spawnExplosion(enemy.x, enemy.y, '#0ff', 10, 150, 3, 0.4);
                 }
                 stopWave();
-                waveNum++;
+                waveNum += skipCount;
                 startWave(waveNum, ARENA_W, ARENA_H);
             } else {
                 // BAN - kill all enemies for points
