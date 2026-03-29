@@ -20,6 +20,7 @@ const CODE_REGISTRY = new Map([
     ['DOUBLETAP',   { type: 'modifier', id: 'doubleDmg',  name: 'Double Damage' }],
     ['MATRIX',      { type: 'modifier', id: 'slowmo',     name: 'Slow Motion Enemies' }],
     ['AIMBOT',      { type: 'modifier', id: 'aimbot',     name: 'Auto-Aim Aimbot' }],
+    ['BAN',         { type: 'instant',  id: 'ban',       name: 'BAN HAMMER - Kill All Bots!' }],
 ]);
 
 export function validateCode(input) {

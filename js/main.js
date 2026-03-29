@@ -91,6 +91,21 @@ codeInput.addEventListener('keydown', (e) => {
             codeFeedback.textContent = 'INVALID CODE';
             codeFeedback.className = 'error';
             codeInput.value = '';
+        } else if (unlock.type === 'instant') {
+            // BAN - kill all enemies
+            const enemies = getEnemies();
+            for (const e of enemies) {
+                if (!e.active) continue;
+                score += e.points;
+                spawnExplosion(e.x, e.y, '#f00', 15, 200, 4, 0.6);
+                playEnemyDeath();
+                e.active = false;
+            }
+            codeFeedback.textContent = `${unlock.name}`;
+            codeFeedback.className = 'success';
+            playUnlock();
+            triggerShake(15);
+            setTimeout(closeCodeEntry, 1200);
         } else if (isUnlocked(unlock.id)) {
             codeFeedback.textContent = 'ALREADY UNLOCKED';
             codeFeedback.className = 'already';
