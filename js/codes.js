@@ -22,6 +22,11 @@ const CODE_REGISTRY = new Map([
     ['AIMBOT',      { type: 'modifier', id: 'aimbot',     name: 'Auto-Aim Aimbot' }],
     ['BAN',         { type: 'instant',  id: 'ban',       name: 'BAN HAMMER - Kill All Bots!' }],
     ['BOSS_MODE',   { type: 'weapon',   id: 'bossmode',  name: 'BOSS MODE - One Shot Kill' }],
+    ['HEAVY',       { type: 'tank',     id: 'heavy',     name: 'Heavy Tank' }],
+    ['INFERNO',     { type: 'tank',     id: 'flame',     name: 'Inferno Tank' }],
+    ['STEALTH',     { type: 'tank',     id: 'stealth',   name: 'Stealth Tank' }],
+    ['GOLDTANK',    { type: 'tank',     id: 'gold',      name: 'Gold Tank' }],
+    ['FROST',       { type: 'tank',     id: 'ice',       name: 'Frost Tank' }],
     ['SKIP',        { type: 'instant',  id: 'skip',      name: 'Skip Wave!' }],
 ]);
 
@@ -69,6 +74,9 @@ export function applyUnlock(unlock) {
                 case 'slowmo': break; // handled in main game loop
                 case 'aimbot': player.aimbot = true; break;
             }
+            break;
+        case 'tank':
+            player.tank = unlock.id;
             break;
     }
 }

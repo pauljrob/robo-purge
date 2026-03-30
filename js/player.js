@@ -25,6 +25,7 @@ export const player = {
     doubleDamage: false,
     invincible: false,
     aimbot: false,
+    tank: 'default',
 };
 
 export function resetPlayer(arenaW, arenaH) {
@@ -44,6 +45,7 @@ export function resetPlayer(arenaW, arenaH) {
     player.doubleDamage = false;
     player.invincible = false;
     player.aimbot = false;
+    player.tank = 'default';
 }
 
 export function updatePlayer(dt, arenaW, arenaH) {
@@ -141,15 +143,32 @@ export function updatePlayer(dt, arenaW, arenaH) {
     }
 }
 
+const TANKS = {
+    default: { body: '#4af', barrel: '#fff', accent: '#28f', name: 'Scout' },
+    heavy:   { body: '#4a4', barrel: '#8f8', accent: '#282', name: 'Heavy' },
+    flame:   { body: '#f80', barrel: '#f44', accent: '#a40', name: 'Inferno' },
+    stealth: { body: '#444', barrel: '#888', accent: '#222', name: 'Stealth' },
+    gold:    { body: '#fd0', barrel: '#fff', accent: '#a80', name: 'Gold' },
+    ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Frost' },
+};
+
+export function getTankDefs() {
+    return TANKS;
+}
+
 export function renderPlayer(ctx) {
     const gctx = getCtx();
     const blinking = player.invincibleTimer > 0 && Math.floor(player.invincibleTimer * 10) % 2 === 0;
 
     if (blinking && !player.invincible) return;
 
-    let bodyColor = '#4af';
+    const tankDef = TANKS[player.tank] || TANKS.default;
+    let bodyColor = tankDef.body;
+    let barrelColor = tankDef.barrel;
+    let accentColor = tankDef.accent;
     let glowColor = null;
 
+    // Skins override colors
     switch (player.skin) {
         case 'ghost':
             gctx.globalAlpha = 0.5;
@@ -170,24 +189,127 @@ export function renderPlayer(ctx) {
         gctx.shadowColor = glowColor;
     }
 
-    // Body
-    drawCircle(player.x, player.y, player.radius, bodyColor);
+    const r = player.radius;
+    const a = player.angle;
 
-    // Gun barrel
-    const barrelLen = 24;
-    drawLine(
-        player.x, player.y,
-        player.x + Math.cos(player.angle) * barrelLen,
-        player.y + Math.sin(player.angle) * barrelLen,
-        '#fff', 3
-    );
+    switch (player.tank) {
+        case 'heavy':
+            // Chunky square-ish tank
+            gctx.save();
+            gctx.translate(player.x, player.y);
+            gctx.rotate(a);
+            gctx.fillStyle = bodyColor;
+            gctx.fillRect(-r, -r * 0.8, r * 2, r * 1.6);
+            gctx.fillStyle = accentColor;
+            gctx.fillRect(-r * 0.6, -r * 0.5, r * 1.2, r);
+            // Double barrel
+            gctx.fillStyle = barrelColor;
+            gctx.fillRect(r * 0.5, -4, r * 1.2, 3);
+            gctx.fillRect(r * 0.5, 1, r * 1.2, 3);
+            gctx.restore();
+            break;
 
-    // Eye
-    drawCircle(
-        player.x + Math.cos(player.angle) * 6,
-        player.y + Math.sin(player.angle) * 6,
-        3, '#fff'
-    );
+        case 'flame':
+            // Round with wide barrel
+            drawCircle(player.x, player.y, r, bodyColor);
+            drawCircle(player.x, player.y, r * 0.6, accentColor);
+            gctx.save();
+            gctx.translate(player.x, player.y);
+            gctx.rotate(a);
+            gctx.fillStyle = barrelColor;
+            gctx.fillRect(r * 0.3, -5, r * 1.4, 10);
+            gctx.restore();
+            break;
+
+        case 'stealth':
+            // Diamond shape
+            gctx.save();
+            gctx.translate(player.x, player.y);
+            gctx.rotate(a);
+            gctx.beginPath();
+            gctx.moveTo(r * 1.2, 0);
+            gctx.lineTo(0, -r * 0.8);
+            gctx.lineTo(-r, 0);
+            gctx.lineTo(0, r * 0.8);
+            gctx.closePath();
+            gctx.fillStyle = bodyColor;
+            gctx.fill();
+            gctx.fillStyle = barrelColor;
+            gctx.fillRect(r * 0.5, -1.5, r, 3);
+            gctx.restore();
+            break;
+
+        case 'gold':
+            // Fancy circle with ring
+            drawCircle(player.x, player.y, r, bodyColor);
+            drawCircle(player.x, player.y, r + 2, '#fa0', false);
+            drawCircle(player.x, player.y, r * 0.5, accentColor);
+            drawLine(
+                player.x, player.y,
+                player.x + Math.cos(a) * (r + 10),
+                player.y + Math.sin(a) * (r + 10),
+                barrelColor, 4
+            );
+            break;
+
+        case 'ice':
+            // Hexagon-ish
+            gctx.save();
+            gctx.translate(player.x, player.y);
+            gctx.rotate(a);
+            gctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const ha = (Math.PI * 2 / 6) * i;
+                const hx = Math.cos(ha) * r;
+                const hy = Math.sin(ha) * r;
+                if (i === 0) gctx.moveTo(hx, hy);
+                else gctx.lineTo(hx, hy);
+            }
+            gctx.closePath();
+            gctx.fillStyle = bodyColor;
+            gctx.fill();
+            gctx.strokeStyle = '#fff';
+            gctx.lineWidth = 1;
+            gctx.stroke();
+            gctx.fillStyle = barrelColor;
+            gctx.fillRect(r * 0.4, -2, r * 1.2, 4);
+            gctx.restore();
+            break;
+
+        default:
+            // Default circle tank
+            drawCircle(player.x, player.y, r, bodyColor);
+            drawLine(
+                player.x, player.y,
+                player.x + Math.cos(a) * (r + 8),
+                player.y + Math.sin(a) * (r + 8),
+                barrelColor, 3
+            );
+            drawCircle(
+                player.x + Math.cos(a) * 6,
+                player.y + Math.sin(a) * 6,
+                3, '#fff'
+            );
+            break;
+    }
+
+    // Direction arrow on top
+    const arrowDist = r + 14;
+    const arrowTipX = player.x + Math.cos(a) * arrowDist;
+    const arrowTipY = player.y + Math.sin(a) * arrowDist;
+    const arrowL1X = player.x + Math.cos(a + 2.7) * (r + 6);
+    const arrowL1Y = player.y + Math.sin(a + 2.7) * (r + 6);
+    const arrowL2X = player.x + Math.cos(a - 2.7) * (r + 6);
+    const arrowL2Y = player.y + Math.sin(a - 2.7) * (r + 6);
+    gctx.beginPath();
+    gctx.moveTo(arrowTipX, arrowTipY);
+    gctx.lineTo(arrowL1X, arrowL1Y);
+    gctx.lineTo(arrowL2X, arrowL2Y);
+    gctx.closePath();
+    gctx.fillStyle = tankDef.barrel;
+    gctx.globalAlpha = 0.6;
+    gctx.fill();
+    gctx.globalAlpha = 1;
 
     gctx.shadowBlur = 0;
     gctx.globalAlpha = 1;
