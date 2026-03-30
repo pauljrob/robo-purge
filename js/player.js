@@ -1,6 +1,6 @@
 import { isKeyDown, getMousePos, isShooting, isAimAssist } from './input.js';
 import { normalize, clamp, angleToTarget, randomRange, distanceSq } from './utils.js';
-import { drawCircle, drawLine, getCtx, screenToWorld } from './renderer.js';
+import { drawCircle, drawLine, drawText, getCtx, screenToWorld } from './renderer.js';
 import { getWeapon } from './weapons.js';
 import { getEnemies } from './enemies.js';
 import { spawnProjectile } from './projectiles.js';
