@@ -56,6 +56,22 @@ function wasKeyPressed(key) {
 initRenderer(ctx, canvas.width, canvas.height);
 initInput(canvas);
 
+// Click handler for tank selection
+canvas.addEventListener('click', (e) => {
+    if (state !== 'TANK_SELECT') return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    for (const pos of tankSelectPositions) {
+        const dx = mx - pos.x;
+        const dy = my - pos.y;
+        if (dx * dx + dy * dy < pos.r * pos.r) {
+            selectedTankIndex = pos.index;
+            break;
+        }
+    }
+});
+
 function startGame() {
     const chosenTank = player.tank;
     state = 'PLAYING';
@@ -485,6 +501,145 @@ function renderMenu() {
     gctx.globalAlpha = 1;
 }
 
+// Store tank positions for click detection
+const tankSelectPositions = [];
+
+function drawTankPreview(gctx, id, t, x, y, r) {
+    switch (id) {
+        case 'default': // Scout - circle with buddy drone orbit ring
+            drawCircle(x, y, r, t.body);
+            drawCircle(x, y, r * 0.5, '#fff');
+            drawCircle(x, y, r * 0.3, t.accent);
+            // Orbit ring
+            gctx.setLineDash([4, 4]);
+            drawCircle(x, y, r + 10, '#4af', false);
+            gctx.setLineDash([]);
+            // Mini buddy
+            const buddyAngle = Date.now() / 800;
+            const bx = x + Math.cos(buddyAngle) * (r + 10);
+            const by = y + Math.sin(buddyAngle) * (r + 10);
+            drawCircle(bx, by, 4, '#4af');
+            drawCircle(bx, by, 2, '#fff');
+            break;
+
+        case 'heavy': // Shooter - rectangular with multiple barrels
+            gctx.fillStyle = t.body;
+            gctx.fillRect(x - r, y - r * 0.7, r * 2, r * 1.4);
+            gctx.fillStyle = t.accent;
+            gctx.fillRect(x - r * 0.7, y - r * 0.5, r * 1.4, r);
+            // Triple barrel
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 5, y - r - 14, 3, 16);
+            gctx.fillRect(x - 1, y - r - 16, 3, 18);
+            gctx.fillRect(x + 3, y - r - 14, 3, 16);
+            // Speed lines
+            gctx.strokeStyle = '#8f8';
+            gctx.lineWidth = 1;
+            for (let s = 0; s < 3; s++) {
+                const sy = y + r * 0.8 + s * 4;
+                gctx.beginPath();
+                gctx.moveTo(x - 8, sy);
+                gctx.lineTo(x + 8, sy);
+                gctx.stroke();
+            }
+            break;
+
+        case 'flame': // Charger - round with glowing core
+            drawCircle(x, y, r, t.body);
+            drawCircle(x, y, r * 0.7, t.accent);
+            // Glowing charge core
+            const chargePulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+            gctx.globalAlpha *= chargePulse;
+            drawCircle(x, y, r * 0.4, '#ff0');
+            gctx.globalAlpha = gctx.globalAlpha / chargePulse;
+            // Wide cannon barrel
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 4, y - r - 14, 8, 16);
+            // Charge indicator marks
+            gctx.strokeStyle = '#ff0';
+            gctx.lineWidth = 2;
+            for (let c = 0; c < 3; c++) {
+                const ca = -Math.PI / 2 + (c - 1) * 0.4;
+                gctx.beginPath();
+                gctx.arc(x, y, r + 5, ca - 0.1, ca + 0.1);
+                gctx.stroke();
+            }
+            break;
+
+        case 'stealth': // Stealth - diamond with camo pattern
+            gctx.beginPath();
+            gctx.moveTo(x, y - r * 1.1);
+            gctx.lineTo(x + r * 0.8, y);
+            gctx.lineTo(x, y + r * 1.1);
+            gctx.lineTo(x - r * 0.8, y);
+            gctx.closePath();
+            gctx.fillStyle = t.body;
+            gctx.fill();
+            // Inner diamond
+            gctx.beginPath();
+            gctx.moveTo(x, y - r * 0.5);
+            gctx.lineTo(x + r * 0.35, y);
+            gctx.lineTo(x, y + r * 0.5);
+            gctx.lineTo(x - r * 0.35, y);
+            gctx.closePath();
+            gctx.fillStyle = t.accent;
+            gctx.fill();
+            // Thin barrel
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 1.5, y - r * 1.1 - 10, 3, 12);
+            break;
+
+        case 'gold': // Tank - big circle with thick armor rings
+            drawCircle(x, y, r, t.body);
+            // Armor rings
+            gctx.lineWidth = 3;
+            drawCircle(x, y, r + 3, '#fa0', false);
+            gctx.lineWidth = 2;
+            drawCircle(x, y, r - 4, t.accent, false);
+            drawCircle(x, y, r * 0.4, '#fff');
+            // Huge cannon
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 4, y - r - 18, 8, 20);
+            gctx.fillRect(x - 6, y - r - 18, 12, 4);
+            break;
+
+        case 'ice': // Phaser - hexagon with phase effect
+            gctx.beginPath();
+            for (let j = 0; j < 6; j++) {
+                const ha = (Math.PI * 2 / 6) * j - Math.PI / 2;
+                const hx = x + Math.cos(ha) * r;
+                const hy = y + Math.sin(ha) * r;
+                if (j === 0) gctx.moveTo(hx, hy);
+                else gctx.lineTo(hx, hy);
+            }
+            gctx.closePath();
+            gctx.fillStyle = t.body;
+            gctx.fill();
+            gctx.strokeStyle = '#fff';
+            gctx.lineWidth = 1;
+            gctx.stroke();
+            // Phase ghost effect
+            const phaseOffset = Math.sin(Date.now() / 400) * 4;
+            gctx.globalAlpha *= 0.3;
+            gctx.beginPath();
+            for (let j = 0; j < 6; j++) {
+                const ha = (Math.PI * 2 / 6) * j - Math.PI / 2;
+                const hx = x + phaseOffset + Math.cos(ha) * r;
+                const hy = y + Math.sin(ha) * r;
+                if (j === 0) gctx.moveTo(hx, hy);
+                else gctx.lineTo(hx, hy);
+            }
+            gctx.closePath();
+            gctx.fillStyle = '#aef';
+            gctx.fill();
+            gctx.globalAlpha = gctx.globalAlpha / 0.3;
+            // Barrel
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 2, y - r - 12, 4, 14);
+            break;
+    }
+}
+
 function renderTankSelect() {
     const gctx = getCtx();
     const tanks = getTankDefs();
@@ -492,103 +647,93 @@ function renderTankSelect() {
 
     gctx.shadowBlur = 15;
     gctx.shadowColor = '#0f0';
-    drawText('CHOOSE YOUR TANK', 400, 80, '#0f0', 32, 'center');
+    drawText('CHOOSE YOUR TANK', 400, 70, '#0f0', 32, 'center');
     gctx.shadowBlur = 0;
+
+    drawText('Click a tank or use A/D to select', 400, 100, '#555', 12, 'center');
 
     const spacing = 120;
     const startX = 400 - ((ids.length - 1) * spacing) / 2;
-    const y = 280;
+    const y = 250;
+
+    tankSelectPositions.length = 0;
 
     for (let i = 0; i < ids.length; i++) {
         const t = tanks[ids[i]];
         const x = startX + i * spacing;
         const selected = i === selectedTankIndex;
+        const r = 28;
 
-        // Draw tank preview
-        const r = selected ? 24 : 18;
-        const alpha = selected ? 1 : 0.4;
-        gctx.globalAlpha = alpha;
+        tankSelectPositions.push({ x, y, r: r + 15, index: i });
 
-        // Tank body based on type
-        switch (ids[i]) {
-            case 'heavy':
-                gctx.fillStyle = t.body;
-                gctx.fillRect(x - r, y - r * 0.8, r * 2, r * 1.6);
-                gctx.fillStyle = t.accent;
-                gctx.fillRect(x - r * 0.6, y - r * 0.5, r * 1.2, r);
-                break;
-            case 'flame':
-                drawCircle(x, y, r, t.body);
-                drawCircle(x, y, r * 0.6, t.accent);
-                break;
-            case 'stealth':
-                gctx.beginPath();
-                gctx.moveTo(x + r * 1.2, y);
-                gctx.lineTo(x, y - r * 0.8);
-                gctx.lineTo(x - r, y);
-                gctx.lineTo(x, y + r * 0.8);
-                gctx.closePath();
-                gctx.fillStyle = t.body;
-                gctx.fill();
-                break;
-            case 'gold':
-                drawCircle(x, y, r, t.body);
-                drawCircle(x, y, r + 2, '#fa0', false);
-                break;
-            case 'ice':
-                gctx.beginPath();
-                for (let j = 0; j < 6; j++) {
-                    const ha = (Math.PI * 2 / 6) * j - Math.PI / 2;
-                    const hx = x + Math.cos(ha) * r;
-                    const hy = y + Math.sin(ha) * r;
-                    if (j === 0) gctx.moveTo(hx, hy);
-                    else gctx.lineTo(hx, hy);
-                }
-                gctx.closePath();
-                gctx.fillStyle = t.body;
-                gctx.fill();
-                break;
-            default:
-                drawCircle(x, y, r, t.body);
-                break;
+        // Background plate
+        if (selected) {
+            gctx.fillStyle = 'rgba(0, 255, 0, 0.08)';
+            gctx.fillRect(x - 50, y - 50, 100, 100);
+            gctx.strokeStyle = '#0f0';
+            gctx.lineWidth = 2;
+            gctx.strokeRect(x - 50, y - 50, 100, 100);
+        } else {
+            gctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+            gctx.fillRect(x - 50, y - 50, 100, 100);
+            gctx.strokeStyle = '#333';
+            gctx.lineWidth = 1;
+            gctx.strokeRect(x - 50, y - 50, 100, 100);
         }
 
-        // Barrel pointing up
-        gctx.fillStyle = t.barrel;
-        gctx.fillRect(x - 2, y - r - 12, 4, 14);
+        gctx.globalAlpha = selected ? 1 : 0.5;
+
+        // Draw unique tank
+        drawTankPreview(gctx, ids[i], t, x, y, r);
 
         gctx.globalAlpha = 1;
 
-        // Name
-        drawText(t.name, x, y + r + 20, selected ? '#fff' : '#555', 12, 'center');
+        // Name below
+        drawText(t.name, x, y + 65, selected ? '#fff' : '#666', 13, 'center');
 
-        // Selection arrow pointing down at selected tank
+        // Big bouncing arrow above selected
         if (selected) {
-            const arrowY = y - r - 30;
-            const bounce = Math.sin(Date.now() / 200) * 4;
-            gctx.beginPath();
-            gctx.moveTo(x, arrowY + 15 + bounce);
-            gctx.lineTo(x - 10, arrowY + bounce);
-            gctx.lineTo(x + 10, arrowY + bounce);
-            gctx.closePath();
+            const bounce = Math.sin(Date.now() / 200) * 6;
+
+            // Arrow shaft
             gctx.fillStyle = '#0f0';
+            gctx.fillRect(x - 3, y - 80 + bounce, 6, 16);
+
+            // Arrow head
+            gctx.beginPath();
+            gctx.moveTo(x, y - 55 + bounce);
+            gctx.lineTo(x - 14, y - 72 + bounce);
+            gctx.lineTo(x + 14, y - 72 + bounce);
+            gctx.closePath();
             gctx.fill();
 
-            // Highlight border
-            drawCircle(x, y, r + 6, '#0f0', false);
+            // Glow
+            gctx.shadowBlur = 10;
+            gctx.shadowColor = '#0f0';
+            gctx.beginPath();
+            gctx.moveTo(x, y - 55 + bounce);
+            gctx.lineTo(x - 14, y - 72 + bounce);
+            gctx.lineTo(x + 14, y - 72 + bounce);
+            gctx.closePath();
+            gctx.fill();
+            gctx.shadowBlur = 0;
         }
     }
 
     // Selected tank description
     const selectedTank = tanks[ids[selectedTankIndex]];
-    drawText(selectedTank.desc, 400, 380, '#0f0', 14, 'center');
+    gctx.shadowBlur = 8;
+    gctx.shadowColor = '#0f0';
+    drawText(selectedTank.desc, 400, 380, '#0f0', 16, 'center');
+    gctx.shadowBlur = 0;
 
-    drawText('< A/LEFT', 60, 280, '#555', 14, 'left');
-    drawText('D/RIGHT >', 740, 280, '#555', 14, 'right');
+    // Controls
+    drawText('< A/LEFT', 50, 250, '#555', 14, 'left');
+    drawText('D/RIGHT >', 750, 250, '#555', 14, 'right');
 
     const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
     gctx.globalAlpha = pulse;
-    drawText('PRESS ENTER TO START', 400, 500, '#0f0', 20, 'center');
+    drawText('PRESS ENTER TO START', 400, 460, '#0f0', 22, 'center');
     gctx.globalAlpha = 1;
 }
 
