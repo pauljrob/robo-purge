@@ -1,6 +1,6 @@
 import { initInput, isKeyDown } from './input.js';
 import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx } from './renderer.js';
-import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer } from './player.js';
+import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
 import { updateEnemies, renderEnemies, getEnemies, clearEnemies } from './enemies.js';
 import { updateParticles, renderParticles, clearParticles } from './particles.js';
@@ -38,6 +38,10 @@ let stateTimer = 0;
 let lastTime = 0;
 let lastShootWeapon = null;
 
+// Tank selection
+const tankIds = Object.keys(getTankDefs());
+let selectedTankIndex = 0;
+
 // Key tracking for single-press
 const prevKeys = {};
 
@@ -53,10 +57,12 @@ initRenderer(ctx, canvas.width, canvas.height);
 initInput(canvas);
 
 function startGame() {
+    const chosenTank = player.tank;
     state = 'PLAYING';
     score = 0;
     waveNum = 1;
     resetPlayer(ARENA_W, ARENA_H);
+    player.tank = chosenTank;
     resetUnlocks();
     clearProjectiles();
     clearEnemies();
@@ -165,8 +171,29 @@ codeInput.addEventListener('keydown', (e) => {
 codeInput.addEventListener('keyup', (e) => e.stopPropagation());
 
 function update(dt) {
-    if (state === 'MENU' || state === 'GAME_OVER') {
+    if (state === 'MENU') {
         if (wasKeyPressed('enter')) {
+            state = 'TANK_SELECT';
+        }
+        return;
+    }
+
+    if (state === 'GAME_OVER') {
+        if (wasKeyPressed('enter')) {
+            state = 'TANK_SELECT';
+        }
+        return;
+    }
+
+    if (state === 'TANK_SELECT') {
+        if (wasKeyPressed('arrowleft') || wasKeyPressed('a')) {
+            selectedTankIndex = (selectedTankIndex - 1 + tankIds.length) % tankIds.length;
+        }
+        if (wasKeyPressed('arrowright') || wasKeyPressed('d')) {
+            selectedTankIndex = (selectedTankIndex + 1) % tankIds.length;
+        }
+        if (wasKeyPressed('enter')) {
+            player.tank = tankIds[selectedTankIndex];
             startGame();
         }
         return;
@@ -346,6 +373,11 @@ function render() {
         return;
     }
 
+    if (state === 'TANK_SELECT') {
+        renderTankSelect();
+        return;
+    }
+
     if (state === 'GAME_OVER') {
         setCamera(player.x, player.y);
         beginCamera();
@@ -449,6 +481,109 @@ function renderMenu() {
     const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
     gctx.globalAlpha = pulse;
     drawText('PRESS ENTER TO START', 400, 530, '#0f0', 20, 'center');
+    gctx.globalAlpha = 1;
+}
+
+function renderTankSelect() {
+    const gctx = getCtx();
+    const tanks = getTankDefs();
+    const ids = tankIds;
+
+    gctx.shadowBlur = 15;
+    gctx.shadowColor = '#0f0';
+    drawText('CHOOSE YOUR TANK', 400, 80, '#0f0', 32, 'center');
+    gctx.shadowBlur = 0;
+
+    const spacing = 120;
+    const startX = 400 - ((ids.length - 1) * spacing) / 2;
+    const y = 280;
+
+    for (let i = 0; i < ids.length; i++) {
+        const t = tanks[ids[i]];
+        const x = startX + i * spacing;
+        const selected = i === selectedTankIndex;
+
+        // Draw tank preview
+        const r = selected ? 24 : 18;
+        const alpha = selected ? 1 : 0.4;
+        gctx.globalAlpha = alpha;
+
+        // Tank body based on type
+        switch (ids[i]) {
+            case 'heavy':
+                gctx.fillStyle = t.body;
+                gctx.fillRect(x - r, y - r * 0.8, r * 2, r * 1.6);
+                gctx.fillStyle = t.accent;
+                gctx.fillRect(x - r * 0.6, y - r * 0.5, r * 1.2, r);
+                break;
+            case 'flame':
+                drawCircle(x, y, r, t.body);
+                drawCircle(x, y, r * 0.6, t.accent);
+                break;
+            case 'stealth':
+                gctx.beginPath();
+                gctx.moveTo(x + r * 1.2, y);
+                gctx.lineTo(x, y - r * 0.8);
+                gctx.lineTo(x - r, y);
+                gctx.lineTo(x, y + r * 0.8);
+                gctx.closePath();
+                gctx.fillStyle = t.body;
+                gctx.fill();
+                break;
+            case 'gold':
+                drawCircle(x, y, r, t.body);
+                drawCircle(x, y, r + 2, '#fa0', false);
+                break;
+            case 'ice':
+                gctx.beginPath();
+                for (let j = 0; j < 6; j++) {
+                    const ha = (Math.PI * 2 / 6) * j - Math.PI / 2;
+                    const hx = x + Math.cos(ha) * r;
+                    const hy = y + Math.sin(ha) * r;
+                    if (j === 0) gctx.moveTo(hx, hy);
+                    else gctx.lineTo(hx, hy);
+                }
+                gctx.closePath();
+                gctx.fillStyle = t.body;
+                gctx.fill();
+                break;
+            default:
+                drawCircle(x, y, r, t.body);
+                break;
+        }
+
+        // Barrel pointing up
+        gctx.fillStyle = t.barrel;
+        gctx.fillRect(x - 2, y - r - 12, 4, 14);
+
+        gctx.globalAlpha = 1;
+
+        // Name
+        drawText(t.name, x, y + r + 20, selected ? '#fff' : '#555', 12, 'center');
+
+        // Selection arrow pointing down at selected tank
+        if (selected) {
+            const arrowY = y - r - 30;
+            const bounce = Math.sin(Date.now() / 200) * 4;
+            gctx.beginPath();
+            gctx.moveTo(x, arrowY + 15 + bounce);
+            gctx.lineTo(x - 10, arrowY + bounce);
+            gctx.lineTo(x + 10, arrowY + bounce);
+            gctx.closePath();
+            gctx.fillStyle = '#0f0';
+            gctx.fill();
+
+            // Highlight border
+            drawCircle(x, y, r + 6, '#0f0', false);
+        }
+    }
+
+    drawText('< A/LEFT', 60, 280, '#555', 14, 'left');
+    drawText('D/RIGHT >', 740, 280, '#555', 14, 'right');
+
+    const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+    gctx.globalAlpha = pulse;
+    drawText('PRESS ENTER TO START', 400, 500, '#0f0', 20, 'center');
     gctx.globalAlpha = 1;
 }
 
