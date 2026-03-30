@@ -861,33 +861,41 @@ function renderTankSelect() {
 
     drawText('Click a tank or use A/D to select', 400, 100, '#555', 12, 'center');
 
-    const spacing = 120;
-    const startX = 400 - ((ids.length - 1) * spacing) / 2;
-    const y = 250;
+    const cols = 4;
+    const rows = Math.ceil(ids.length / cols);
+    const spacingX = 160;
+    const spacingY = 160;
+    const startY = rows === 1 ? 270 : 200;
 
     tankSelectPositions.length = 0;
 
     for (let i = 0; i < ids.length; i++) {
         const t = tanks[ids[i]];
-        const x = startX + i * spacing;
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const rowCount = row < rows - 1 ? cols : ids.length - row * cols;
+        const rowStartX = 400 - ((rowCount - 1) * spacingX) / 2;
+        const x = rowStartX + col * spacingX;
+        const y = startY + row * spacingY;
         const selected = i === selectedTankIndex;
-        const r = 28;
+        const r = 24;
 
         tankSelectPositions.push({ x, y, r: r + 15, index: i });
 
         // Background plate
+        const plateSize = 60;
         if (selected) {
             gctx.fillStyle = 'rgba(0, 255, 0, 0.08)';
-            gctx.fillRect(x - 50, y - 50, 100, 100);
+            gctx.fillRect(x - plateSize, y - plateSize, plateSize * 2, plateSize * 2);
             gctx.strokeStyle = '#0f0';
             gctx.lineWidth = 2;
-            gctx.strokeRect(x - 50, y - 50, 100, 100);
+            gctx.strokeRect(x - plateSize, y - plateSize, plateSize * 2, plateSize * 2);
         } else {
             gctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-            gctx.fillRect(x - 50, y - 50, 100, 100);
+            gctx.fillRect(x - plateSize, y - plateSize, plateSize * 2, plateSize * 2);
             gctx.strokeStyle = '#333';
             gctx.lineWidth = 1;
-            gctx.strokeRect(x - 50, y - 50, 100, 100);
+            gctx.strokeRect(x - plateSize, y - plateSize, plateSize * 2, plateSize * 2);
         }
 
         gctx.globalAlpha = selected ? 1 : 0.5;
@@ -931,18 +939,19 @@ function renderTankSelect() {
 
     // Selected tank description
     const selectedTank = tanks[ids[selectedTankIndex]];
+    const descY = startY + rows * spacingY - 30;
     gctx.shadowBlur = 8;
     gctx.shadowColor = '#0f0';
-    drawText(selectedTank.desc, 400, 380, '#0f0', 16, 'center');
+    drawText(selectedTank.desc, 400, descY, '#0f0', 14, 'center');
     gctx.shadowBlur = 0;
 
     // Controls
-    drawText('< A/LEFT', 50, 250, '#555', 14, 'left');
-    drawText('D/RIGHT >', 750, 250, '#555', 14, 'right');
+    drawText('< A/LEFT', 30, startY + 40, '#555', 12, 'left');
+    drawText('D/RIGHT >', 770, startY + 40, '#555', 12, 'right');
 
     const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
     gctx.globalAlpha = pulse;
-    drawText('PRESS ENTER TO START', 400, 460, '#0f0', 22, 'center');
+    drawText('PRESS ENTER TO START', 400, descY + 40, '#0f0', 20, 'center');
     gctx.globalAlpha = 1;
 }
 
