@@ -14,16 +14,16 @@ export function startWave(waveNum, arenaW, arenaH) {
     spawnTimer = 0;
     spawnInterval = Math.max(0.8, 2 - waveNum * 0.05);
 
-    const hpMult = 1 + waveNum * 0.05;
+    const hpMult = Math.min(10, 1 + waveNum * 0.05);
 
     // Build spawn list
     enemiesToSpawn = [];
 
-    const drones = Math.max(0, 3 + waveNum * 2);
-    const shooters = Math.max(0, (waveNum - 2) * 2);
-    const chargers = Math.max(0, (waveNum - 4));
-    const tanks = Math.max(0, Math.floor((waveNum - 6) / 2));
-    const phasers = Math.max(0, Math.floor((waveNum - 8) / 2));
+    const drones = Math.min(30, Math.max(0, 3 + waveNum * 2));
+    const shooters = Math.min(20, Math.max(0, (waveNum - 2) * 2));
+    const chargers = Math.min(15, Math.max(0, (waveNum - 4)));
+    const tanks = Math.min(10, Math.max(0, Math.floor((waveNum - 6) / 2)));
+    const phasers = Math.min(10, Math.max(0, Math.floor((waveNum - 8) / 2)));
 
     for (let i = 0; i < drones; i++) enemiesToSpawn.push({ type: 'drone', hpMult });
     for (let i = 0; i < shooters; i++) enemiesToSpawn.push({ type: 'shooter', hpMult });
