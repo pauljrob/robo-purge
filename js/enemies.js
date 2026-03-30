@@ -74,7 +74,7 @@ export function spawnEnemy(type, x, y, hpMultiplier = 1) {
     return null;
 }
 
-export function updateEnemies(dt, playerX, playerY, speedMultiplier = 1) {
+export function updateEnemies(dt, playerX, playerY, speedMultiplier = 1, arenaW = 1600, arenaH = 1200) {
     for (const e of pool) {
         if (!e.active) continue;
 
@@ -224,6 +224,18 @@ export function updateEnemies(dt, playerX, playerY, speedMultiplier = 1) {
 
         e.x += e.vx * dt;
         e.y += e.vy * dt;
+
+        // Clamp to arena bounds (allow slight overshoot for spawning from edges)
+        e.x = Math.max(-e.radius, Math.min(arenaW + e.radius, e.x));
+        e.y = Math.max(-e.radius, Math.min(arenaH + e.radius, e.y));
+
+        // Once inside the arena, keep them inside
+        if (e.x > 0 && e.x < arenaW) {
+            e.x = Math.max(e.radius, Math.min(arenaW - e.radius, e.x));
+        }
+        if (e.y > 0 && e.y < arenaH) {
+            e.y = Math.max(e.radius, Math.min(arenaH - e.radius, e.y));
+        }
     }
 }
 

@@ -381,7 +381,7 @@ function update(dt) {
 
     updatePlayer(dt, ARENA_W, ARENA_H);
     updateProjectiles(dt, ARENA_W, ARENA_H, getEnemies());
-    updateEnemies(dt, player.x, player.y, enemySpeedMult);
+    updateEnemies(dt, player.x, player.y, enemySpeedMult, ARENA_W, ARENA_H);
     updateWaveSpawning(dt, ARENA_W, ARENA_H, player.x, player.y);
     updateParticles(dt);
     updateShake();
