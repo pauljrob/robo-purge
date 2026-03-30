@@ -87,9 +87,9 @@ export function updatePlayer(dt, arenaW, arenaH) {
     if (isKeyDown('arrowleft')) { ax -= 1; arrowAiming = true; }
     if (isKeyDown('arrowright')) { ax += 1; arrowAiming = true; }
 
-    const playerAimbot = (player.aimbot || player.softAimbot) && player.tank !== 'default';
+    const playerAimbot = player.softAimbot || (player.aimbot && player.tank !== 'default');
     if (playerAimbot) {
-        // Auto-aim at nearest enemy (not for Scout - buddy handles it)
+        // Auto-aim at nearest enemy
         const enemies = getEnemies();
         let nearest = null;
         let nearestDist = Infinity;
