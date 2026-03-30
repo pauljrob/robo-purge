@@ -83,8 +83,13 @@ export function renderHUD(ctx, score) {
         iconX -= 22;
     }
 
+    // Aim assist indicator
+    if (player.softAimbot) {
+        drawText('AIM ASSIST', 785, 550, '#4af', 10, 'right');
+    }
+
     // Code entry hint
-    drawText('[C] ENTER CODE', 400, 590, '#0a0', 11, 'center');
+    drawText('[C] CODE  [P] POWERS  [Q] AIM ASSIST', 400, 590, '#0a0', 11, 'center');
 
     // Auto shoot indicator
     if (isAutoShoot()) {

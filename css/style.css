@@ -159,3 +159,71 @@ body {
 .code-entry.unlocked .code-desc {
     color: #0ff;
 }
+
+#powers-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+#powers-overlay.hidden {
+    display: none;
+}
+
+#powers-box {
+    text-align: center;
+    color: #0f0;
+}
+
+#powers-box h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #0f0;
+    letter-spacing: 4px;
+}
+
+#powers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 300px;
+}
+
+.power-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border: 1px solid #333;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.power-item:hover {
+    border-color: #0f0;
+}
+
+.power-item .power-name {
+    color: #fff;
+}
+
+.power-item .power-status {
+    font-weight: bold;
+}
+
+.power-item .power-status.on {
+    color: #0f0;
+}
+
+.power-item .power-status.off {
+    color: #f44;
+}

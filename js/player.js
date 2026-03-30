@@ -25,6 +25,7 @@ export const player = {
     doubleDamage: false,
     invincible: false,
     aimbot: false,
+    softAimbot: false, // built-in aim assist, no homing
     tank: 'default',
     // Buddy drone
     buddyAngle: 0,
@@ -52,6 +53,7 @@ export function resetPlayer(arenaW, arenaH) {
     player.doubleDamage = false;
     player.invincible = false;
     player.aimbot = false;
+    player.softAimbot = false;
     player.tank = 'default';
     player.buddyAngle = 0;
     player.buddyBombTimer = 0;
@@ -85,7 +87,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
     if (isKeyDown('arrowleft')) { ax -= 1; arrowAiming = true; }
     if (isKeyDown('arrowright')) { ax += 1; arrowAiming = true; }
 
-    const playerAimbot = player.aimbot && player.tank !== 'default';
+    const playerAimbot = (player.aimbot || player.softAimbot) && player.tank !== 'default';
     if (playerAimbot) {
         // Auto-aim at nearest enemy (not for Scout - buddy handles it)
         const enemies = getEnemies();

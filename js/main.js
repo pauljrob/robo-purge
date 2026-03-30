@@ -30,6 +30,10 @@ const codesListOverlay = document.getElementById('codes-list-overlay');
 const codesListContent = document.getElementById('codes-list-content');
 let codesListOpen = false;
 
+// Powers menu UI
+const powersOverlay = document.getElementById('powers-overlay');
+const powersList = document.getElementById('powers-list');
+
 // Game state
 let state = 'MENU';
 let score = 0;
@@ -118,6 +122,61 @@ function openCodesList() {
 function closeCodesList() {
     codesListOpen = false;
     codesListOverlay.classList.add('hidden');
+    state = 'PLAYING';
+}
+
+function getActivePowers() {
+    const powers = [];
+    powers.push({ key: 'softAimbot', name: 'Aim Assist', active: player.softAimbot });
+    if (isUnlocked('aimbot')) powers.push({ key: 'aimbot', name: 'Aimbot (Homing)', active: player.aimbot });
+    if (isUnlocked('invincible')) powers.push({ key: 'invincible', name: 'God Mode', active: player.invincible });
+    if (isUnlocked('doubleDmg')) powers.push({ key: 'doubleDamage', name: 'Double Damage', active: player.doubleDamage });
+    if (isUnlocked('slowmo')) powers.push({ key: 'slowmo', name: 'Slow Motion', active: true }); // always on if unlocked
+    if (isUnlocked('armor')) powers.push({ key: 'damageReduction', name: 'Armor (50%)', active: player.damageReduction > 0 });
+    if (isUnlocked('speed')) powers.push({ key: 'speedMultiplier', name: 'Speed Boost', active: player.speedMultiplier > 1 });
+    if (isUnlocked('lifesteal')) powers.push({ key: 'lifesteal', name: 'Vampiric', active: player.lifesteal > 0 });
+    if (isUnlocked('explosive')) powers.push({ key: 'explosiveKills', name: 'Explosive Kills', active: player.explosiveKills });
+    return powers;
+}
+
+function togglePower(key) {
+    switch (key) {
+        case 'softAimbot': player.softAimbot = !player.softAimbot; break;
+        case 'aimbot': player.aimbot = !player.aimbot; break;
+        case 'invincible': player.invincible = !player.invincible; break;
+        case 'doubleDamage': player.doubleDamage = !player.doubleDamage; break;
+        case 'damageReduction': player.damageReduction = player.damageReduction > 0 ? 0 : 0.5; break;
+        case 'speedMultiplier': player.speedMultiplier = player.speedMultiplier > 1 ? 1 : 1.5; break;
+        case 'lifesteal': player.lifesteal = player.lifesteal > 0 ? 0 : 0.05; break;
+        case 'explosiveKills': player.explosiveKills = !player.explosiveKills; break;
+    }
+    renderPowersList();
+}
+
+function renderPowersList() {
+    powersList.innerHTML = '';
+    const powers = getActivePowers();
+    if (powers.length === 0) {
+        powersList.innerHTML = '<p style="color:#555">No powers active. Use codes to unlock powers!</p>';
+        return;
+    }
+    for (const p of powers) {
+        const div = document.createElement('div');
+        div.className = 'power-item';
+        div.innerHTML = `<span class="power-name">${p.name}</span><span class="power-status ${p.active ? 'on' : 'off'}">${p.active ? 'ON' : 'OFF'}</span>`;
+        div.addEventListener('click', () => togglePower(p.key));
+        powersList.appendChild(div);
+    }
+}
+
+function openPowersMenu() {
+    state = 'POWERS_MENU';
+    renderPowersList();
+    powersOverlay.classList.remove('hidden');
+}
+
+function closePowersMenu() {
+    powersOverlay.classList.add('hidden');
     state = 'PLAYING';
 }
 
@@ -222,10 +281,28 @@ function update(dt) {
         return;
     }
 
+    if (state === 'POWERS_MENU') {
+        if (wasKeyPressed('p') || wasKeyPressed('escape')) {
+            closePowersMenu();
+        }
+        return;
+    }
+
     if (state !== 'PLAYING') return;
 
     // Mute toggle
     if (wasKeyPressed('m')) toggleMute();
+
+    // Q - toggle aim assist (no homing)
+    if (wasKeyPressed('q')) {
+        player.softAimbot = !player.softAimbot;
+    }
+
+    // P - open powers menu
+    if (wasKeyPressed('p')) {
+        openPowersMenu();
+        return;
+    }
 
     // Open code entry with C
     if (wasKeyPressed('c')) {
