@@ -38,7 +38,7 @@ export const player = {
     orbs: 1,
     orbAngle: 0,
     orbAttackTimer: 0,
-    nextOrbCost: 500,
+    nextOrbCost: 50,
     orbsBought: 0,
 };
 
@@ -69,7 +69,7 @@ export function resetPlayer(arenaW, arenaH) {
     player.orbs = 1;
     player.orbAngle = 0;
     player.orbAttackTimer = 0;
-    player.nextOrbCost = 500;
+    player.nextOrbCost = 50;
     player.orbsBought = 0;
 }
 
@@ -545,7 +545,7 @@ export function buyOrb(score) {
     const cost = player.nextOrbCost;
     player.orbs++;
     player.orbsBought++;
-    player.nextOrbCost = Math.floor(500 * Math.pow(3, player.orbsBought));
+    player.nextOrbCost = Math.floor(50 * Math.pow(2, player.orbsBought));
     return { success: true, cost };
 }
 
