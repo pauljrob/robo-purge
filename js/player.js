@@ -92,8 +92,8 @@ export function updatePlayer(dt, arenaW, arenaH) {
         player.clasherInvincibleTimer -= dt;
     }
 
-    // Clasher auto-drive: move toward nearest enemy
-    if (player.tank === 'clasher' && player.autoDrive) {
+    // Auto-drive: move toward nearest enemy (Clasher & Orbit Master)
+    if ((player.tank === 'clasher' || player.tank === 'orbit') && player.autoDrive) {
         const enemies = getEnemies();
         let nearest = null;
         let nearestDist = Infinity;
@@ -637,6 +637,13 @@ export function renderPlayer(ctx) {
             drawText(`Next orb: ${player.nextOrbCost} pts`, player.x, player.y + player.radius + 25, '#e4f', 9, 'center');
         } else {
             drawText('MAX ORBS', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
+        }
+
+        // Auto-drive indicator ring
+        if (player.autoDrive) {
+            gctx.globalAlpha = 0.3 + Math.sin(Date.now() / 150) * 0.15;
+            drawCircle(player.x, player.y, player.radius + 12, '#e4f', false);
+            gctx.globalAlpha = 1;
         }
     }
 }

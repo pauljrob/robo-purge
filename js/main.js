@@ -315,9 +315,9 @@ function update(dt) {
     // Mute toggle
     if (wasKeyPressed('m')) toggleMute();
 
-    // Q - toggle aim assist or auto-drive for Clasher
+    // Q - toggle aim assist or auto-drive for Clasher/Orbit Master
     if (wasKeyPressed('q')) {
-        if (player.tank === 'clasher') {
+        if (player.tank === 'clasher' || player.tank === 'orbit') {
             player.autoDrive = !player.autoDrive;
         } else {
             toggleAimAssist();
@@ -460,6 +460,34 @@ function update(dt) {
             triggerShake(6);
             playPlayerHit();
             spawnExplosion(player.x, player.y, '#f44', 5, 80, 2, 0.2);
+        }
+    }
+
+    // Collision: Orbit Master orbs vs enemies (contact damage)
+    if (player.tank === 'orbit') {
+        const orbDist = 45;
+        for (let i = 0; i < player.orbs; i++) {
+            const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
+            const ox = player.x + Math.cos(orbA) * orbDist;
+            const oy = player.y + Math.sin(orbA) * orbDist;
+            for (const e of enemies) {
+                if (!e.active) continue;
+                if (circleVsCircle(ox, oy, 7, e.x, e.y, e.radius)) {
+                    e.hp -= 25;
+                    e.flashTimer = 0.08;
+                    playEnemyHit();
+                    spawnExplosion(ox, oy, '#e4f', 5, 80, 2, 0.2);
+                    if (e.hp <= 0) {
+                        e.active = false;
+                        score += e.points;
+                        playEnemyDeath();
+                        spawnExplosion(e.x, e.y, '#e4f', 12, 150, 3, 0.5);
+                        if (player.lifesteal > 0) {
+                            player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.lifesteal);
+                        }
+                    }
+                }
+            }
         }
     }
 
