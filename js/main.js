@@ -360,6 +360,7 @@ function update(dt) {
     if (isWaveComplete()) {
         stopWave();
         playWaveComplete();
+        player.hp = player.maxHp;
         state = 'WAVE_COMPLETE';
         stateTimer = 0;
     }
