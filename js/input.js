@@ -5,6 +5,7 @@ let mouseDown = false;
 let canvas = null;
 let autoShoot = false;
 let lastShiftTime = 0;
+let aimAssist = false;
 
 export function initInput(canvasEl) {
     canvas = canvasEl;
@@ -12,6 +13,11 @@ export function initInput(canvasEl) {
     window.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.key.startsWith('Arrow')) e.preventDefault();
         keys.set(e.key.toLowerCase(), true);
+
+        // Q - toggle aim assist
+        if (e.key === 'q' || e.key === 'Q') {
+            aimAssist = !aimAssist;
+        }
 
         // Double-tap shift to toggle auto shoot
         if (e.key === 'Shift') {
@@ -64,4 +70,8 @@ export function isAutoShoot() {
 
 export function resetAutoShoot() {
     autoShoot = false;
+}
+
+export function isAimAssist() {
+    return aimAssist;
 }

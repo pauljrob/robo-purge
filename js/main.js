@@ -1,4 +1,4 @@
-import { initInput, isKeyDown } from './input.js';
+import { initInput, isKeyDown, isAimAssist } from './input.js';
 import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx } from './renderer.js';
 import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
@@ -127,7 +127,7 @@ function closeCodesList() {
 
 function getActivePowers() {
     const powers = [];
-    powers.push({ key: 'softAimbot', name: 'Aim Assist', active: player.softAimbot });
+    powers.push({ key: 'softAimbot', name: 'Aim Assist (Q)', active: isAimAssist() });
     if (isUnlocked('aimbot')) powers.push({ key: 'aimbot', name: 'Aimbot (Homing)', active: player.aimbot });
     if (isUnlocked('invincible')) powers.push({ key: 'invincible', name: 'God Mode', active: player.invincible });
     if (isUnlocked('doubleDmg')) powers.push({ key: 'doubleDamage', name: 'Double Damage', active: player.doubleDamage });
@@ -292,11 +292,6 @@ function update(dt) {
 
     // Mute toggle
     if (wasKeyPressed('m')) toggleMute();
-
-    // Q - toggle aim assist (no homing)
-    if (wasKeyPressed('q')) {
-        player.softAimbot = !player.softAimbot;
-    }
 
     // P - open powers menu
     if (wasKeyPressed('p')) {

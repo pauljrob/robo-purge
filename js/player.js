@@ -1,4 +1,4 @@
-import { isKeyDown, getMousePos, isShooting } from './input.js';
+import { isKeyDown, getMousePos, isShooting, isAimAssist } from './input.js';
 import { normalize, clamp, angleToTarget, randomRange, distanceSq } from './utils.js';
 import { drawCircle, drawLine, getCtx, screenToWorld } from './renderer.js';
 import { getWeapon } from './weapons.js';
@@ -87,7 +87,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
     if (isKeyDown('arrowleft')) { ax -= 1; arrowAiming = true; }
     if (isKeyDown('arrowright')) { ax += 1; arrowAiming = true; }
 
-    const playerAimbot = player.softAimbot || (player.aimbot && player.tank !== 'default');
+    const playerAimbot = isAimAssist() || (player.aimbot && player.tank !== 'default');
     if (playerAimbot) {
         // Auto-aim at nearest enemy
         const enemies = getEnemies();

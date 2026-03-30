@@ -3,7 +3,7 @@ import { player } from './player.js';
 import { getWeapon, getWeaponOrder, WEAPONS } from './weapons.js';
 import { getCurrentWave, getEnemiesRemaining, isBossLevel } from './waves.js';
 import { getUnlocked } from './codes.js';
-import { isAutoShoot } from './input.js';
+import { isAutoShoot, isAimAssist } from './input.js';
 import { isMuted } from './audio.js';
 
 export function renderHUD(ctx, score) {
@@ -84,7 +84,7 @@ export function renderHUD(ctx, score) {
     }
 
     // Aim assist indicator
-    if (player.softAimbot) {
+    if (isAimAssist()) {
         drawText('AIM ASSIST', 785, 550, '#4af', 10, 'right');
     }
 
