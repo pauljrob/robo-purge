@@ -126,7 +126,8 @@ export function updatePlayer(dt, arenaW, arenaH) {
                     weapon.bulletSize,
                     weapon.piercing,
                     weapon.explosive,
-                    weapon.explosionRadius || 0
+                    weapon.explosionRadius || 0,
+                    player.aimbot
                 );
             }
 
