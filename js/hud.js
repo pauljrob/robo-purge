@@ -44,6 +44,13 @@ export function renderHUD(ctx, score) {
         drawText(`Orbs: ${player.orbs}/4 MAX`, 785, 42, '#ff0', 10, 'right');
     }
 
+    // Drone tank buy hint
+    if (player.tank === 'default' && player.drones < 4) {
+        drawText(`[B] Buy Drone (${player.nextDroneCost} pts)  Drones: ${player.drones}/4`, 785, 42, '#4af', 10, 'right');
+    } else if (player.tank === 'default') {
+        drawText(`Drones: ${player.drones}/4 MAX`, 785, 42, '#ff0', 10, 'right');
+    }
+
     // Active weapon
     const weapon = getWeapon(player.weapon);
     if (weapon) {

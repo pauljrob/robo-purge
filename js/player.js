@@ -27,9 +27,12 @@ export const player = {
     aimbot: false,
     softAimbot: false, // built-in aim assist, no homing
     tank: 'default',
-    // Buddy drone
+    // Drone tank
     buddyAngle: 0,
     buddyBombTimer: 0,
+    drones: 1,
+    nextDroneCost: 50,
+    dronesBought: 0,
     // Charger charge
     charging: false,
     chargeTime: 0,
@@ -63,6 +66,9 @@ export function resetPlayer(arenaW, arenaH) {
     player.tank = 'default';
     player.buddyAngle = 0;
     player.buddyBombTimer = 0;
+    player.drones = 1;
+    player.nextDroneCost = 50;
+    player.dronesBought = 0;
     player.charging = false;
     player.chargeTime = 0;
     player.maxChargeTime = 2;
@@ -128,30 +134,33 @@ export function updatePlayer(dt, arenaW, arenaH) {
         player.invincibleTimer -= dt;
     }
 
-    // Tank-specific: buddy drone (Scout/default)
+    // Tank-specific: buddy drones (Drone/default)
     if (player.tank === 'default') {
         player.buddyAngle += dt * 2.5;
         player.buddyBombTimer -= dt;
         if (player.buddyBombTimer <= 0) {
             player.buddyBombTimer = 1.2;
-            const buddyX = player.x + Math.cos(player.buddyAngle) * 40;
-            const buddyY = player.y + Math.sin(player.buddyAngle) * 40;
-            // Find nearest enemy to bomb
             const enemies = getEnemies();
-            let nearest = null;
-            let nearestDist = Infinity;
-            for (const en of enemies) {
-                if (!en.active) continue;
-                const d = distanceSq(buddyX, buddyY, en.x, en.y);
-                if (d < nearestDist) { nearestDist = d; nearest = en; }
-            }
-            if (nearest) {
-                const bombAngle = angleToTarget(buddyX, buddyY, nearest.x, nearest.y);
-                spawnProjectile(buddyX, buddyY,
-                    Math.cos(bombAngle) * 300, Math.sin(bombAngle) * 300,
-                    20, 'player', '#4af', 4, false, true, 50, true
-                );
-                spawnExplosion(buddyX, buddyY, '#4af', 4, 50, 2, 0.15);
+            for (let d = 0; d < player.drones; d++) {
+                const droneAngle = player.buddyAngle + (Math.PI * 2 / player.drones) * d;
+                const buddyX = player.x + Math.cos(droneAngle) * 40;
+                const buddyY = player.y + Math.sin(droneAngle) * 40;
+                // Find nearest enemy to this drone
+                let nearest = null;
+                let nearestDist = Infinity;
+                for (const en of enemies) {
+                    if (!en.active) continue;
+                    const dist = distanceSq(buddyX, buddyY, en.x, en.y);
+                    if (dist < nearestDist) { nearestDist = dist; nearest = en; }
+                }
+                if (nearest) {
+                    const bombAngle = angleToTarget(buddyX, buddyY, nearest.x, nearest.y);
+                    spawnProjectile(buddyX, buddyY,
+                        Math.cos(bombAngle) * 300, Math.sin(bombAngle) * 300,
+                        20, 'player', '#4af', 4, false, true, 50, true
+                    );
+                    spawnExplosion(buddyX, buddyY, '#4af', 4, 50, 2, 0.15);
+                }
             }
         }
     }
@@ -277,7 +286,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
 }
 
 const TANKS = {
-    default: { body: '#4af', barrel: '#fff', accent: '#28f', name: 'Scout', desc: 'Buddy drone bombs enemies' },
+    default: { body: '#4af', barrel: '#fff', accent: '#28f', name: 'Drone', desc: 'Buddy drones bomb enemies. Buy more (max 4)' },
     heavy:   { body: '#4a4', barrel: '#8f8', accent: '#282', name: 'Shooter', desc: 'Fast fire, weak damage' },
     flame:   { body: '#f80', barrel: '#f44', accent: '#a40', name: 'Charger', desc: 'Hold to charge, massive hit' },
     stealth: { body: '#444', barrel: '#888', accent: '#222', name: 'Stealth', desc: 'Standard balanced tank' },
@@ -467,19 +476,29 @@ export function renderPlayer(ctx) {
         gctx.globalAlpha = 1;
     }
 
-    // Buddy drone (Scout)
+    // Buddy drones (Drone tank)
     if (player.tank === 'default') {
-        const bx = player.x + Math.cos(player.buddyAngle) * 40;
-        const by = player.y + Math.sin(player.buddyAngle) * 40;
-        drawCircle(bx, by, 6, '#4af');
-        drawCircle(bx, by, 3, '#fff');
-        // Little propeller
-        const propAngle = Date.now() / 50;
-        drawLine(
-            bx + Math.cos(propAngle) * 5, by + Math.sin(propAngle) * 5,
-            bx - Math.cos(propAngle) * 5, by - Math.sin(propAngle) * 5,
-            '#8cf', 1
-        );
+        for (let d = 0; d < player.drones; d++) {
+            const droneAngle = player.buddyAngle + (Math.PI * 2 / player.drones) * d;
+            const bx = player.x + Math.cos(droneAngle) * 40;
+            const by = player.y + Math.sin(droneAngle) * 40;
+            drawCircle(bx, by, 6, '#4af');
+            drawCircle(bx, by, 3, '#fff');
+            // Little propeller
+            const propAngle = Date.now() / 50 + d;
+            drawLine(
+                bx + Math.cos(propAngle) * 5, by + Math.sin(propAngle) * 5,
+                bx - Math.cos(propAngle) * 5, by - Math.sin(propAngle) * 5,
+                '#8cf', 1
+            );
+        }
+
+        // Show next drone cost
+        if (player.drones < 4) {
+            drawText(`Next drone: ${player.nextDroneCost} pts`, player.x, player.y + player.radius + 25, '#4af', 9, 'center');
+        } else {
+            drawText('MAX DRONES', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
+        }
     }
 
     // Charge bar (Charger/Inferno)
@@ -535,6 +554,18 @@ export function renderPlayer(ctx) {
             drawText('MAX ORBS', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
         }
     }
+}
+
+export function buyDrone(score) {
+    if (player.tank !== 'default') return { success: false, cost: 0 };
+    if (player.drones >= 4) return { success: false, cost: 0 };
+    if (score < player.nextDroneCost) return { success: false, cost: 0 };
+
+    const cost = player.nextDroneCost;
+    player.drones++;
+    player.dronesBought++;
+    player.nextDroneCost = Math.floor(50 * Math.pow(2, player.dronesBought));
+    return { success: true, cost };
 }
 
 export function buyOrb(score) {

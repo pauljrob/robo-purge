@@ -1,6 +1,6 @@
 import { initInput, isKeyDown, isAimAssist } from './input.js';
 import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx } from './renderer.js';
-import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb } from './player.js';
+import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb, buyDrone } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
 import { updateEnemies, renderEnemies, getEnemies, clearEnemies } from './enemies.js';
 import { updateParticles, renderParticles, clearParticles } from './particles.js';
@@ -335,12 +335,14 @@ function update(dt) {
         }
     }
 
-    // Buy orb (Orbit Master)
-    if (wasKeyPressed('b') && player.tank === 'orbit') {
-        const result = buyOrb(score);
-        if (result.success) {
-            score -= result.cost;
-            playUnlock();
+    // Buy orb (Orbit Master) or drone (Drone tank)
+    if (wasKeyPressed('b')) {
+        if (player.tank === 'orbit') {
+            const result = buyOrb(score);
+            if (result.success) { score -= result.cost; playUnlock(); }
+        } else if (player.tank === 'default') {
+            const result = buyDrone(score);
+            if (result.success) { score -= result.cost; playUnlock(); }
         }
     }
 
