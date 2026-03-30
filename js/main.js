@@ -233,6 +233,9 @@ codeInput.addEventListener('keydown', (e) => {
                 stopWave();
                 waveNum += skipCount;
                 startWave(waveNum, ARENA_W, ARENA_H);
+            } else if (unlock.id === 'orb') {
+                // ORB - give 20 orbs no matter what tank
+                player.orbs = 20;
             } else {
                 // BAN - kill all enemies for points
                 const enemies = getEnemies();
@@ -463,8 +466,8 @@ function update(dt) {
         }
     }
 
-    // Collision: Orbit Master orbs vs enemies (contact damage)
-    if (player.tank === 'orbit') {
+    // Collision: orbs vs enemies (contact damage)
+    if (player.orbs > 0) {
         const orbDist = 45;
         for (let i = 0; i < player.orbs; i++) {
             const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;

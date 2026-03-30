@@ -37,11 +37,11 @@ export function renderHUD(ctx, score) {
     // Score
     drawText(`SCORE: ${score}`, 785, 25, '#ff0', 16, 'right');
 
-    // Orbit Master orb buy hint
+    // Orb info (Orbit Master buy hint, or ORB code count)
     if (player.tank === 'orbit' && player.orbs < 4) {
         drawText(`[B] or Click tank to Buy Orb (${player.nextOrbCost} pts)  Orbs: ${player.orbs}/4`, 785, 42, '#e4f', 10, 'right');
-    } else if (player.tank === 'orbit') {
-        drawText(`Orbs: ${player.orbs}/4 MAX`, 785, 42, '#ff0', 10, 'right');
+    } else if (player.orbs > 0) {
+        drawText(`Orbs: ${player.orbs}`, 785, 42, '#e4f', 10, 'right');
     }
 
     // Drone tank buy hint

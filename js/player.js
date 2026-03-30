@@ -42,7 +42,7 @@ export const player = {
     clasherInvincibleTimer: 0,
     autoDrive: false,
     // Orbit Master
-    orbs: 1,
+    orbs: 0,
     orbAngle: 0,
     orbAttackTimer: 0,
     nextOrbCost: 50,
@@ -79,7 +79,7 @@ export function resetPlayer(arenaW, arenaH) {
     player.charging = false;
     player.chargeTime = 0;
     player.maxChargeTime = 2;
-    player.orbs = 1;
+    player.orbs = 0;
     player.orbAngle = 0;
     player.orbAttackTimer = 0;
     player.nextOrbCost = 50;
@@ -198,8 +198,8 @@ export function updatePlayer(dt, arenaW, arenaH) {
         }
     }
 
-    // Tank-specific: Orbit Master
-    if (player.tank === 'orbit') {
+    // Orbit logic (works for any tank with orbs)
+    if (player.orbs > 0) {
         player.orbAngle += dt * 2;
         player.orbAttackTimer -= dt;
 
@@ -611,8 +611,8 @@ export function renderPlayer(ctx) {
         gctx.globalAlpha = 1;
     }
 
-    // Orbit Master orbs
-    if (player.tank === 'orbit') {
+    // Orbs (Orbit Master or ORB code)
+    if (player.orbs > 0) {
         const orbDist = 45;
         for (let i = 0; i < player.orbs; i++) {
             const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
@@ -653,6 +653,9 @@ export function applyTankStats() {
         player.hp = 300;
         player.maxHp = 300;
         player.speed = 280;
+    }
+    if (player.tank === 'orbit') {
+        player.orbs = 1;
     }
 }
 
