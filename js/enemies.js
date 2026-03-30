@@ -41,6 +41,9 @@ const ENEMY_DEFS = {
     phaser: {
         hp: 25, speed: 100, radius: 11, color: '#a4f', points: 35,
     },
+    boss: {
+        hp: 5000, speed: 50, radius: 40, color: '#f00', points: 1000,
+    },
 };
 
 export function spawnEnemy(type, x, y, hpMultiplier = 1) {
@@ -182,6 +185,41 @@ export function updateEnemies(dt, playerX, playerY, speedMultiplier = 1) {
                     spawnExplosion(e.x, e.y, '#a4f', 8, 100, 2, 0.3);
                 }
                 break;
+
+            case 'boss':
+                // Slowly chase player
+                e.vx = dir.x * spd;
+                e.vy = dir.y * spd;
+
+                // Attack 1: Spread shot every 1.5s
+                if (e.shootTimer <= 0) {
+                    e.shootTimer = 1.5;
+                    const angle = angleToTarget(e.x, e.y, playerX, playerY);
+                    for (let i = -3; i <= 3; i++) {
+                        spawnProjectile(
+                            e.x, e.y,
+                            Math.cos(angle + i * 0.25) * 300,
+                            Math.sin(angle + i * 0.25) * 300,
+                            15, 'enemy', '#f44', 5
+                        );
+                    }
+                }
+
+                // Attack 2: Ring of bullets every 3s
+                if (e.aiTimer > 3) {
+                    e.aiTimer = 0;
+                    for (let i = 0; i < 16; i++) {
+                        const a = (Math.PI * 2 / 16) * i;
+                        spawnProjectile(
+                            e.x, e.y,
+                            Math.cos(a) * 200,
+                            Math.sin(a) * 200,
+                            10, 'enemy', '#fa0', 4
+                        );
+                    }
+                    spawnExplosion(e.x, e.y, '#f00', 12, 100, 3, 0.3);
+                }
+                break;
         }
 
         e.x += e.vx * dt;
@@ -242,12 +280,34 @@ export function renderEnemies(ctx) {
                 drawCircle(e.x, e.y, e.radius + 3, '#c6f', false);
                 gctx.setLineDash([]);
                 break;
+
+            case 'boss':
+                // Pulsing glow
+                const pulse = Math.sin(Date.now() / 200) * 5;
+                gctx.shadowBlur = 20 + pulse;
+                gctx.shadowColor = '#f00';
+                // Outer ring
+                drawCircle(e.x, e.y, e.radius + 4, '#f00', false);
+                // Body
+                drawCircle(e.x, e.y, e.radius, color);
+                // Inner core
+                drawCircle(e.x, e.y, e.radius * 0.6, '#800');
+                // Evil eye
+                drawCircle(e.x, e.y, 8, '#ff0');
+                drawCircle(e.x, e.y, 4, '#f00');
+                gctx.shadowBlur = 0;
+                // Label
+                gctx.fillStyle = '#fff';
+                gctx.font = 'bold 12px "Courier New", monospace';
+                gctx.textAlign = 'center';
+                gctx.fillText('BOSS', e.x, e.y - e.radius - 15);
+                break;
         }
 
         // HP bar
         if (e.hp < e.maxHp) {
-            const barW = e.radius * 2;
-            const barH = 3;
+            const barW = e.type === 'boss' ? 100 : e.radius * 2;
+            const barH = e.type === 'boss' ? 6 : 3;
             const barX = e.x - barW / 2;
             const barY = e.y - e.radius - 8;
             gctx.fillStyle = '#300';

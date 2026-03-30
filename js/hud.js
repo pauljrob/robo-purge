@@ -1,7 +1,7 @@
 import { drawRect, drawText, getCtx } from './renderer.js';
 import { player } from './player.js';
 import { getWeapon, getWeaponOrder, WEAPONS } from './weapons.js';
-import { getCurrentWave, getEnemiesRemaining } from './waves.js';
+import { getCurrentWave, getEnemiesRemaining, isBossLevel } from './waves.js';
 import { getUnlocked } from './codes.js';
 import { isAutoShoot } from './input.js';
 import { isMuted } from './audio.js';
@@ -23,7 +23,15 @@ export function renderHUD(ctx, score) {
     drawText(`HP: ${Math.ceil(player.hp)}`, hpX + 5, hpY + 13, '#fff', 12);
 
     // Wave info
-    drawText(`WAVE ${getCurrentWave()}`, 400, 25, '#0f0', 20, 'center');
+    if (isBossLevel()) {
+        const gctx2 = getCtx();
+        gctx2.shadowBlur = 15;
+        gctx2.shadowColor = '#f00';
+        drawText(`BOSS WAVE ${getCurrentWave()}`, 400, 25, '#f00', 20, 'center');
+        gctx2.shadowBlur = 0;
+    } else {
+        drawText(`WAVE ${getCurrentWave()}`, 400, 25, '#0f0', 20, 'center');
+    }
     drawText(`Enemies: ${getEnemiesRemaining()}`, 400, 45, '#888', 12, 'center');
 
     // Score

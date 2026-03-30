@@ -7,6 +7,7 @@ let enemiesToSpawn = [];
 let spawnTimer = 0;
 let spawnInterval = 2;
 let waveActive = false;
+let isBossWave = false;
 
 export function startWave(waveNum, arenaW, arenaH) {
     currentWave = waveNum;
@@ -18,18 +19,28 @@ export function startWave(waveNum, arenaW, arenaH) {
 
     // Build spawn list
     enemiesToSpawn = [];
+    isBossWave = (waveNum % 100 === 0 && waveNum > 0);
 
-    const drones = Math.min(30, Math.max(0, 3 + waveNum * 2));
-    const shooters = Math.min(20, Math.max(0, (waveNum - 2) * 2));
-    const chargers = Math.min(15, Math.max(0, (waveNum - 4)));
-    const tanks = Math.min(10, Math.max(0, Math.floor((waveNum - 6) / 2)));
-    const phasers = Math.min(10, Math.max(0, Math.floor((waveNum - 8) / 2)));
+    if (isBossWave) {
+        // Boss wave: 1 boss + some minions
+        const bossHpMult = Math.min(10, 1 + Math.floor(waveNum / 100));
+        enemiesToSpawn.push({ type: 'boss', hpMult: bossHpMult });
+        // Add some drones as minions
+        for (let i = 0; i < 10; i++) enemiesToSpawn.push({ type: 'drone', hpMult });
+        for (let i = 0; i < 5; i++) enemiesToSpawn.push({ type: 'shooter', hpMult });
+    } else {
+        const drones = Math.min(30, Math.max(0, 3 + waveNum * 2));
+        const shooters = Math.min(20, Math.max(0, (waveNum - 2) * 2));
+        const chargers = Math.min(15, Math.max(0, (waveNum - 4)));
+        const tanks = Math.min(10, Math.max(0, Math.floor((waveNum - 6) / 2)));
+        const phasers = Math.min(10, Math.max(0, Math.floor((waveNum - 8) / 2)));
 
-    for (let i = 0; i < drones; i++) enemiesToSpawn.push({ type: 'drone', hpMult });
-    for (let i = 0; i < shooters; i++) enemiesToSpawn.push({ type: 'shooter', hpMult });
-    for (let i = 0; i < chargers; i++) enemiesToSpawn.push({ type: 'charger', hpMult });
-    for (let i = 0; i < tanks; i++) enemiesToSpawn.push({ type: 'tank', hpMult });
-    for (let i = 0; i < phasers; i++) enemiesToSpawn.push({ type: 'phaser', hpMult });
+        for (let i = 0; i < drones; i++) enemiesToSpawn.push({ type: 'drone', hpMult });
+        for (let i = 0; i < shooters; i++) enemiesToSpawn.push({ type: 'shooter', hpMult });
+        for (let i = 0; i < chargers; i++) enemiesToSpawn.push({ type: 'charger', hpMult });
+        for (let i = 0; i < tanks; i++) enemiesToSpawn.push({ type: 'tank', hpMult });
+        for (let i = 0; i < phasers; i++) enemiesToSpawn.push({ type: 'phaser', hpMult });
+    }
 
     // Shuffle
     for (let i = enemiesToSpawn.length - 1; i > 0; i--) {
@@ -81,4 +92,8 @@ export function getEnemiesRemaining() {
 
 export function stopWave() {
     waveActive = false;
+}
+
+export function isBossLevel() {
+    return isBossWave;
 }
