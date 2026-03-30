@@ -85,8 +85,9 @@ export function updatePlayer(dt, arenaW, arenaH) {
     if (isKeyDown('arrowleft')) { ax -= 1; arrowAiming = true; }
     if (isKeyDown('arrowright')) { ax += 1; arrowAiming = true; }
 
-    if (player.aimbot) {
-        // Auto-aim at nearest enemy
+    const playerAimbot = player.aimbot && player.tank !== 'default';
+    if (playerAimbot) {
+        // Auto-aim at nearest enemy (not for Scout - buddy handles it)
         const enemies = getEnemies();
         let nearest = null;
         let nearestDist = Infinity;
@@ -135,7 +136,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
                 const bombAngle = angleToTarget(buddyX, buddyY, nearest.x, nearest.y);
                 spawnProjectile(buddyX, buddyY,
                     Math.cos(bombAngle) * 300, Math.sin(bombAngle) * 300,
-                    20, 'player', '#4af', 4, false, true, 50, player.aimbot
+                    20, 'player', '#4af', 4, false, true, 50, true
                 );
                 spawnExplosion(buddyX, buddyY, '#4af', 4, 50, 2, 0.15);
             }
@@ -154,7 +155,7 @@ export function updatePlayer(dt, arenaW, arenaH) {
     }
 
     // Tank-specific: Charger charge-up (Inferno)
-    const wantShoot = isShooting() || arrowAiming || player.aimbot;
+    const wantShoot = isShooting() || arrowAiming || playerAimbot;
     if (player.tank === 'flame') {
         if (wantShoot) {
             player.charging = true;
