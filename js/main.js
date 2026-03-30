@@ -349,7 +349,7 @@ function update(dt) {
     const enemySpeedMult = isSlowMoActive() ? 0.5 : 1;
 
     updatePlayer(dt, ARENA_W, ARENA_H);
-    updateProjectiles(dt, ARENA_W, ARENA_H);
+    updateProjectiles(dt, ARENA_W, ARENA_H, getEnemies());
     updateEnemies(dt, player.x, player.y, enemySpeedMult);
     updateWaveSpawning(dt, ARENA_W, ARENA_H, player.x, player.y);
     updateParticles(dt);

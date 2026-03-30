@@ -1,5 +1,4 @@
 import { drawCircle, getCtx } from './renderer.js';
-import { getEnemies } from './enemies.js';
 import { normalize, distanceSq } from './utils.js';
 
 const MAX_PROJECTILES = 300;
@@ -47,13 +46,12 @@ export function spawnProjectile(x, y, vx, vy, damage, owner, color, size, pierci
     return null;
 }
 
-export function updateProjectiles(dt, arenaW, arenaH) {
+export function updateProjectiles(dt, arenaW, arenaH, enemies) {
     for (const p of pool) {
         if (!p.active) continue;
 
         // Homing: steer toward nearest enemy
-        if (p.homing && p.owner === 'player') {
-            const enemies = getEnemies();
+        if (p.homing && p.owner === 'player' && enemies) {
             let nearest = null;
             let nearestDist = Infinity;
             for (const e of enemies) {
