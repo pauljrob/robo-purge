@@ -1,6 +1,6 @@
 import { initInput, isKeyDown, isAimAssist } from './input.js';
 import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx } from './renderer.js';
-import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs } from './player.js';
+import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
 import { updateEnemies, renderEnemies, getEnemies, clearEnemies } from './enemies.js';
 import { updateParticles, renderParticles, clearParticles } from './particles.js';
@@ -332,6 +332,15 @@ function update(dt) {
             if (wep && !wep.locked) {
                 player.weapon = order[i];
             }
+        }
+    }
+
+    // Buy orb (Orbit Master)
+    if (wasKeyPressed('b') && player.tank === 'orbit') {
+        const result = buyOrb(score);
+        if (result.success) {
+            score -= result.cost;
+            playUnlock();
         }
     }
 
@@ -708,6 +717,31 @@ function drawTankPreview(gctx, id, t, x, y, r) {
             // Barrel
             gctx.fillStyle = t.barrel;
             gctx.fillRect(x - 2, y - r - 12, 4, 14);
+            break;
+
+        case 'orbit': // Orbit Master - circle with spinning orbs
+            drawCircle(x, y, r * 0.8, t.body);
+            drawCircle(x, y, r * 0.4, t.accent);
+            // Orbit ring
+            gctx.setLineDash([3, 3]);
+            drawCircle(x, y, r + 6, '#e4f', false);
+            gctx.setLineDash([]);
+            // Spinning orbs
+            const orbCount = 3;
+            const orbTime = Date.now() / 600;
+            for (let o = 0; o < orbCount; o++) {
+                const oa = orbTime + (Math.PI * 2 / orbCount) * o;
+                const ox2 = x + Math.cos(oa) * (r + 6);
+                const oy2 = y + Math.sin(oa) * (r + 6);
+                gctx.shadowBlur = 8;
+                gctx.shadowColor = '#e4f';
+                drawCircle(ox2, oy2, 5, '#e4f');
+                drawCircle(ox2, oy2, 3, '#fff');
+                gctx.shadowBlur = 0;
+            }
+            // Barrel
+            gctx.fillStyle = t.barrel;
+            gctx.fillRect(x - 2, y - r * 0.8 - 12, 4, 14);
             break;
     }
 }

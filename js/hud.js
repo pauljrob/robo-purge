@@ -37,6 +37,13 @@ export function renderHUD(ctx, score) {
     // Score
     drawText(`SCORE: ${score}`, 785, 25, '#ff0', 16, 'right');
 
+    // Orbit Master orb buy hint
+    if (player.tank === 'orbit' && player.orbs < 4) {
+        drawText(`[B] Buy Orb (${player.nextOrbCost} pts)  Orbs: ${player.orbs}/4`, 785, 42, '#e4f', 10, 'right');
+    } else if (player.tank === 'orbit') {
+        drawText(`Orbs: ${player.orbs}/4 MAX`, 785, 42, '#ff0', 10, 'right');
+    }
+
     // Active weapon
     const weapon = getWeapon(player.weapon);
     if (weapon) {

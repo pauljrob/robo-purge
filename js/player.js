@@ -34,6 +34,12 @@ export const player = {
     charging: false,
     chargeTime: 0,
     maxChargeTime: 2,
+    // Orbit Master
+    orbs: 1,
+    orbAngle: 0,
+    orbAttackTimer: 0,
+    nextOrbCost: 500,
+    orbsBought: 0,
 };
 
 export function resetPlayer(arenaW, arenaH) {
@@ -60,6 +66,11 @@ export function resetPlayer(arenaW, arenaH) {
     player.charging = false;
     player.chargeTime = 0;
     player.maxChargeTime = 2;
+    player.orbs = 1;
+    player.orbAngle = 0;
+    player.orbAttackTimer = 0;
+    player.nextOrbCost = 500;
+    player.orbsBought = 0;
 }
 
 export function updatePlayer(dt, arenaW, arenaH) {
@@ -141,6 +152,41 @@ export function updatePlayer(dt, arenaW, arenaH) {
                     20, 'player', '#4af', 4, false, true, 50, true
                 );
                 spawnExplosion(buddyX, buddyY, '#4af', 4, 50, 2, 0.15);
+            }
+        }
+    }
+
+    // Tank-specific: Orbit Master
+    if (player.tank === 'orbit') {
+        player.orbAngle += dt * 2;
+        player.orbAttackTimer -= dt;
+
+        // Each orb attacks independently
+        if (player.orbAttackTimer <= 0) {
+            player.orbAttackTimer = 0.8;
+            const enemies = getEnemies();
+            for (let i = 0; i < player.orbs; i++) {
+                const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
+                const orbDist = 45;
+                const ox = player.x + Math.cos(orbA) * orbDist;
+                const oy = player.y + Math.sin(orbA) * orbDist;
+
+                // Find nearest enemy to this orb
+                let nearest = null;
+                let nearestDist = Infinity;
+                for (const en of enemies) {
+                    if (!en.active) continue;
+                    const d = distanceSq(ox, oy, en.x, en.y);
+                    if (d < nearestDist) { nearestDist = d; nearest = en; }
+                }
+                if (nearest) {
+                    const shotAngle = angleToTarget(ox, oy, nearest.x, nearest.y);
+                    spawnProjectile(ox, oy,
+                        Math.cos(shotAngle) * 400, Math.sin(shotAngle) * 400,
+                        15, 'player', '#e4f', 3, false, false, 0, true
+                    );
+                    spawnExplosion(ox, oy, '#e4f', 3, 40, 2, 0.1);
+                }
             }
         }
     }
@@ -237,6 +283,7 @@ const TANKS = {
     stealth: { body: '#444', barrel: '#888', accent: '#222', name: 'Stealth', desc: 'Standard balanced tank' },
     gold:    { body: '#fd0', barrel: '#fff', accent: '#a80', name: 'Tank', desc: 'Slow fire, huge damage' },
     ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Phaser', desc: '50% phase through attacks' },
+    orbit:   { body: '#e4f', barrel: '#fff', accent: '#a0c', name: 'Orbit Master', desc: 'Orbs orbit you. Buy more with score (max 4)' },
 };
 
 export function getTankDefs() {
@@ -363,6 +410,18 @@ export function renderPlayer(ctx) {
             gctx.restore();
             break;
 
+        case 'orbit':
+            // Orbit Master body
+            drawCircle(player.x, player.y, r, '#e4f');
+            drawCircle(player.x, player.y, r * 0.5, '#a0c');
+            drawLine(
+                player.x, player.y,
+                player.x + Math.cos(a) * (r + 8),
+                player.y + Math.sin(a) * (r + 8),
+                barrelColor, 3
+            );
+            break;
+
         default:
             // Default circle tank
             drawCircle(player.x, player.y, r, bodyColor);
@@ -447,6 +506,47 @@ export function renderPlayer(ctx) {
         drawCircle(player.x, player.y, player.radius + 12, '#8ef');
         gctx.globalAlpha = 1;
     }
+
+    // Orbit Master orbs
+    if (player.tank === 'orbit') {
+        const orbDist = 45;
+        for (let i = 0; i < player.orbs; i++) {
+            const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
+            const ox = player.x + Math.cos(orbA) * orbDist;
+            const oy = player.y + Math.sin(orbA) * orbDist;
+
+            // Orb glow
+            gctx.shadowBlur = 12;
+            gctx.shadowColor = '#e4f';
+            drawCircle(ox, oy, 7, '#e4f');
+            drawCircle(ox, oy, 4, '#fff');
+            gctx.shadowBlur = 0;
+
+            // Orbit trail
+            gctx.globalAlpha = 0.15;
+            drawCircle(player.x, player.y, orbDist, '#e4f', false);
+            gctx.globalAlpha = 1;
+        }
+
+        // Show next orb cost if under max
+        if (player.orbs < 4) {
+            drawText(`Next orb: ${player.nextOrbCost} pts`, player.x, player.y + player.radius + 25, '#e4f', 9, 'center');
+        } else {
+            drawText('MAX ORBS', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
+        }
+    }
+}
+
+export function buyOrb(score) {
+    if (player.tank !== 'orbit') return { success: false, cost: 0 };
+    if (player.orbs >= 4) return { success: false, cost: 0 };
+    if (score < player.nextOrbCost) return { success: false, cost: 0 };
+
+    const cost = player.nextOrbCost;
+    player.orbs++;
+    player.orbsBought++;
+    player.nextOrbCost = Math.floor(500 * Math.pow(3, player.orbsBought));
+    return { success: true, cost };
 }
 
 export function damagePlayer(amount) {
