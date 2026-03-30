@@ -26,6 +26,13 @@ export const player = {
     invincible: false,
     aimbot: false,
     tank: 'default',
+    // Buddy drone
+    buddyAngle: 0,
+    buddyBombTimer: 0,
+    // Charger charge
+    charging: false,
+    chargeTime: 0,
+    maxChargeTime: 2,
 };
 
 export function resetPlayer(arenaW, arenaH) {
@@ -46,6 +53,11 @@ export function resetPlayer(arenaW, arenaH) {
     player.invincible = false;
     player.aimbot = false;
     player.tank = 'default';
+    player.buddyAngle = 0;
+    player.buddyBombTimer = 0;
+    player.charging = false;
+    player.chargeTime = 0;
+    player.maxChargeTime = 2;
 }
 
 export function updatePlayer(dt, arenaW, arenaH) {
@@ -102,54 +114,126 @@ export function updatePlayer(dt, arenaW, arenaH) {
         player.invincibleTimer -= dt;
     }
 
-    // Shooting
-    player.fireCooldown -= dt;
-    if ((isShooting() || arrowAiming || player.aimbot) && player.fireCooldown <= 0) {
-        const weapon = getWeapon(player.weapon);
-        if (weapon) {
-            player.fireCooldown = 1 / weapon.fireRate;
-            const dmg = player.doubleDamage ? weapon.damage * 2 : weapon.damage;
+    // Tank-specific: buddy drone (Scout/default)
+    if (player.tank === 'default') {
+        player.buddyAngle += dt * 2.5;
+        player.buddyBombTimer -= dt;
+        if (player.buddyBombTimer <= 0) {
+            player.buddyBombTimer = 1.2;
+            const buddyX = player.x + Math.cos(player.buddyAngle) * 40;
+            const buddyY = player.y + Math.sin(player.buddyAngle) * 40;
+            // Find nearest enemy to bomb
+            const enemies = getEnemies();
+            let nearest = null;
+            let nearestDist = Infinity;
+            for (const en of enemies) {
+                if (!en.active) continue;
+                const d = distanceSq(buddyX, buddyY, en.x, en.y);
+                if (d < nearestDist) { nearestDist = d; nearest = en; }
+            }
+            if (nearest) {
+                const bombAngle = angleToTarget(buddyX, buddyY, nearest.x, nearest.y);
+                spawnProjectile(buddyX, buddyY,
+                    Math.cos(bombAngle) * 300, Math.sin(bombAngle) * 300,
+                    20, 'player', '#4af', 4, false, true, 50, player.aimbot
+                );
+                spawnExplosion(buddyX, buddyY, '#4af', 4, 50, 2, 0.15);
+            }
+        }
+    }
 
-            for (let i = 0; i < weapon.bullets; i++) {
-                const spreadRad = (weapon.spread * Math.PI / 180);
-                const offset = weapon.bullets > 1
-                    ? -spreadRad / 2 + (spreadRad / (weapon.bullets - 1)) * i
-                    : 0;
-                const finalAngle = player.angle + offset + randomRange(-0.02, 0.02);
+    // Tank-specific modifiers
+    let fireRateMult = 1;
+    let damageMult = 1;
+    if (player.tank === 'heavy') {
+        fireRateMult = 3;    // 3x fire rate
+        damageMult = 0.3;    // 30% damage
+    } else if (player.tank === 'gold') {
+        fireRateMult = 0.3;  // slow fire rate
+        damageMult = 4;      // 4x damage
+    }
 
+    // Tank-specific: Charger charge-up (Inferno)
+    const wantShoot = isShooting() || arrowAiming || player.aimbot;
+    if (player.tank === 'flame') {
+        if (wantShoot) {
+            player.charging = true;
+            player.chargeTime = Math.min(player.chargeTime + dt, player.maxChargeTime);
+        } else if (player.charging && player.chargeTime > 0) {
+            // Release charged shot
+            player.charging = false;
+            const weapon = getWeapon(player.weapon);
+            if (weapon) {
+                const chargeFrac = player.chargeTime / player.maxChargeTime;
+                const dmg = (player.doubleDamage ? weapon.damage * 2 : weapon.damage) * (1 + chargeFrac * 10);
+                const size = weapon.bulletSize + chargeFrac * 8;
                 spawnProjectile(
                     player.x + Math.cos(player.angle) * 20,
                     player.y + Math.sin(player.angle) * 20,
-                    Math.cos(finalAngle) * weapon.bulletSpeed,
-                    Math.sin(finalAngle) * weapon.bulletSpeed,
-                    dmg,
-                    'player',
-                    weapon.color,
-                    weapon.bulletSize,
-                    weapon.piercing,
-                    weapon.explosive,
-                    weapon.explosionRadius || 0,
+                    Math.cos(player.angle) * weapon.bulletSpeed * (0.8 + chargeFrac),
+                    Math.sin(player.angle) * weapon.bulletSpeed * (0.8 + chargeFrac),
+                    dmg, 'player', '#f44', size,
+                    chargeFrac > 0.8, chargeFrac > 0.5, 80,
                     player.aimbot
                 );
+                spawnExplosion(
+                    player.x + Math.cos(player.angle) * 22,
+                    player.y + Math.sin(player.angle) * 22,
+                    '#f80', 5 + Math.floor(chargeFrac * 10), 100, 3, 0.3
+                );
             }
+            player.chargeTime = 0;
+        }
+    } else {
+        // Normal shooting for all other tanks
+        player.fireCooldown -= dt;
+        if (wantShoot && player.fireCooldown <= 0) {
+            const weapon = getWeapon(player.weapon);
+            if (weapon) {
+                player.fireCooldown = 1 / (weapon.fireRate * fireRateMult);
+                const dmg = (player.doubleDamage ? weapon.damage * 2 : weapon.damage) * damageMult;
 
-            // Muzzle flash
-            spawnExplosion(
-                player.x + Math.cos(player.angle) * 22,
-                player.y + Math.sin(player.angle) * 22,
-                weapon.color, 3, 50, 2, 0.15
-            );
+                for (let i = 0; i < weapon.bullets; i++) {
+                    const spreadRad = (weapon.spread * Math.PI / 180);
+                    const offset = weapon.bullets > 1
+                        ? -spreadRad / 2 + (spreadRad / (weapon.bullets - 1)) * i
+                        : 0;
+                    const finalAngle = player.angle + offset + randomRange(-0.02, 0.02);
+
+                    spawnProjectile(
+                        player.x + Math.cos(player.angle) * 20,
+                        player.y + Math.sin(player.angle) * 20,
+                        Math.cos(finalAngle) * weapon.bulletSpeed,
+                        Math.sin(finalAngle) * weapon.bulletSpeed,
+                        dmg,
+                        'player',
+                        weapon.color,
+                        weapon.bulletSize,
+                        weapon.piercing,
+                        weapon.explosive,
+                        weapon.explosionRadius || 0,
+                        player.aimbot
+                    );
+                }
+
+                // Muzzle flash
+                spawnExplosion(
+                    player.x + Math.cos(player.angle) * 22,
+                    player.y + Math.sin(player.angle) * 22,
+                    weapon.color, 3, 50, 2, 0.15
+                );
+            }
         }
     }
 }
 
 const TANKS = {
-    default: { body: '#4af', barrel: '#fff', accent: '#28f', name: 'Scout' },
-    heavy:   { body: '#4a4', barrel: '#8f8', accent: '#282', name: 'Heavy' },
-    flame:   { body: '#f80', barrel: '#f44', accent: '#a40', name: 'Inferno' },
-    stealth: { body: '#444', barrel: '#888', accent: '#222', name: 'Stealth' },
-    gold:    { body: '#fd0', barrel: '#fff', accent: '#a80', name: 'Gold' },
-    ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Frost' },
+    default: { body: '#4af', barrel: '#fff', accent: '#28f', name: 'Scout', desc: 'Buddy drone bombs enemies' },
+    heavy:   { body: '#4a4', barrel: '#8f8', accent: '#282', name: 'Shooter', desc: 'Fast fire, weak damage' },
+    flame:   { body: '#f80', barrel: '#f44', accent: '#a40', name: 'Charger', desc: 'Hold to charge, massive hit' },
+    stealth: { body: '#444', barrel: '#888', accent: '#222', name: 'Stealth', desc: 'Standard balanced tank' },
+    gold:    { body: '#fd0', barrel: '#fff', accent: '#a80', name: 'Tank', desc: 'Slow fire, huge damage' },
+    ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Phaser', desc: '50% phase through attacks' },
 };
 
 export function getTankDefs() {
@@ -320,11 +404,57 @@ export function renderPlayer(ctx) {
         drawCircle(player.x, player.y, player.radius + 8, '#ff0', false);
         gctx.globalAlpha = 1;
     }
+
+    // Buddy drone (Scout)
+    if (player.tank === 'default') {
+        const bx = player.x + Math.cos(player.buddyAngle) * 40;
+        const by = player.y + Math.sin(player.buddyAngle) * 40;
+        drawCircle(bx, by, 6, '#4af');
+        drawCircle(bx, by, 3, '#fff');
+        // Little propeller
+        const propAngle = Date.now() / 50;
+        drawLine(
+            bx + Math.cos(propAngle) * 5, by + Math.sin(propAngle) * 5,
+            bx - Math.cos(propAngle) * 5, by - Math.sin(propAngle) * 5,
+            '#8cf', 1
+        );
+    }
+
+    // Charge bar (Charger/Inferno)
+    if (player.tank === 'flame' && player.charging && player.chargeTime > 0) {
+        const chargeFrac = player.chargeTime / player.maxChargeTime;
+        const barW = 40;
+        const barH = 5;
+        const barX = player.x - barW / 2;
+        const barY = player.y + player.radius + 12;
+        gctx.fillStyle = '#333';
+        gctx.fillRect(barX, barY, barW, barH);
+        const chargeColor = chargeFrac > 0.8 ? '#f00' : chargeFrac > 0.5 ? '#f80' : '#ff0';
+        gctx.fillStyle = chargeColor;
+        gctx.fillRect(barX, barY, barW * chargeFrac, barH);
+        gctx.strokeStyle = '#fff';
+        gctx.lineWidth = 1;
+        gctx.strokeRect(barX, barY, barW, barH);
+    }
+
+    // Phaser aura (Ice)
+    if (player.tank === 'ice') {
+        const phaseAlpha = 0.15 + Math.sin(Date.now() / 300) * 0.1;
+        gctx.globalAlpha = phaseAlpha;
+        drawCircle(player.x, player.y, player.radius + 12, '#8ef');
+        gctx.globalAlpha = 1;
+    }
 }
 
 export function damagePlayer(amount) {
     if (player.invincible) return;
     if (player.invincibleTimer > 0) return;
+
+    // Phaser tank: 50% chance to phase through
+    if (player.tank === 'ice' && Math.random() < 0.5) {
+        spawnExplosion(player.x, player.y, '#8ef', 6, 60, 2, 0.2);
+        return;
+    }
 
     const actualDmg = amount * (1 - player.damageReduction);
     player.hp -= actualDmg;

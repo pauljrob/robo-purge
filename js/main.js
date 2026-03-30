@@ -578,6 +578,10 @@ function renderTankSelect() {
         }
     }
 
+    // Selected tank description
+    const selectedTank = tanks[ids[selectedTankIndex]];
+    drawText(selectedTank.desc, 400, 380, '#0f0', 14, 'center');
+
     drawText('< A/LEFT', 60, 280, '#555', 14, 'left');
     drawText('D/RIGHT >', 740, 280, '#555', 14, 'right');
 
