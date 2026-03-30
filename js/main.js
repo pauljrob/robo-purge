@@ -535,6 +535,14 @@ function update(dt) {
                         }
                     }
                 }
+            } else if (player.tank === 'orbit') {
+                // Orbit Master body doesn't take contact damage - orbs handle it
+                // Just push enemy away
+                const dx = e.x - player.x;
+                const dy = e.y - player.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                e.x += (dx / dist) * 20;
+                e.y += (dy / dist) * 20;
             } else {
                 damagePlayer(15);
                 triggerShake(8);
