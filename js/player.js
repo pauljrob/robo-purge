@@ -37,6 +37,10 @@ export const player = {
     charging: false,
     chargeTime: 0,
     maxChargeTime: 2,
+    // Clasher
+    clasherDamage: 50,
+    clasherInvincibleTimer: 0,
+    autoDrive: false,
     // Orbit Master
     orbs: 1,
     orbAngle: 0,
@@ -69,6 +73,9 @@ export function resetPlayer(arenaW, arenaH) {
     player.drones = 1;
     player.nextDroneCost = 50;
     player.dronesBought = 0;
+    player.clasherDamage = 50;
+    player.clasherInvincibleTimer = 0;
+    player.autoDrive = false;
     player.charging = false;
     player.chargeTime = 0;
     player.maxChargeTime = 2;
@@ -80,21 +87,47 @@ export function resetPlayer(arenaW, arenaH) {
 }
 
 export function updatePlayer(dt, arenaW, arenaH) {
-    // Movement (WASD)
-    let mx = 0, my = 0;
-    if (isKeyDown('w')) my -= 1;
-    if (isKeyDown('s')) my += 1;
-    if (isKeyDown('a')) mx -= 1;
-    if (isKeyDown('d')) mx += 1;
+    // Clasher invincibility from ramming
+    if (player.clasherInvincibleTimer > 0) {
+        player.clasherInvincibleTimer -= dt;
+    }
 
-    const dir = normalize(mx, my);
-    const spd = player.speed * player.speedMultiplier;
-    player.x += dir.x * spd * dt;
-    player.y += dir.y * spd * dt;
+    // Clasher auto-drive: move toward nearest enemy
+    if (player.tank === 'clasher' && player.autoDrive) {
+        const enemies = getEnemies();
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (const en of enemies) {
+            if (!en.active) continue;
+            const d = distanceSq(player.x, player.y, en.x, en.y);
+            if (d < nearestDist) { nearestDist = d; nearest = en; }
+        }
+        if (nearest) {
+            const autoDir = normalize(nearest.x - player.x, nearest.y - player.y);
+            const spd = player.speed * player.speedMultiplier;
+            player.x += autoDir.x * spd * dt;
+            player.y += autoDir.y * spd * dt;
+            player.angle = angleToTarget(player.x, player.y, nearest.x, nearest.y);
+        }
+        player.x = clamp(player.x, player.radius, arenaW - player.radius);
+        player.y = clamp(player.y, player.radius, arenaH - player.radius);
+    } else {
+        // Normal movement (WASD)
+        let mx = 0, my = 0;
+        if (isKeyDown('w')) my -= 1;
+        if (isKeyDown('s')) my += 1;
+        if (isKeyDown('a')) mx -= 1;
+        if (isKeyDown('d')) mx += 1;
 
-    // Clamp to arena
-    player.x = clamp(player.x, player.radius, arenaW - player.radius);
-    player.y = clamp(player.y, player.radius, arenaH - player.radius);
+        const dir = normalize(mx, my);
+        const spd = player.speed * player.speedMultiplier;
+        player.x += dir.x * spd * dt;
+        player.y += dir.y * spd * dt;
+
+        // Clamp to arena
+        player.x = clamp(player.x, player.radius, arenaW - player.radius);
+        player.y = clamp(player.y, player.radius, arenaH - player.radius);
+    }
 
     // Aiming — arrow keys set angle and auto-shoot, mouse also works
     let arrowAiming = false;
@@ -213,7 +246,9 @@ export function updatePlayer(dt, arenaW, arenaH) {
 
     // Tank-specific: Charger charge-up (Inferno)
     const wantShoot = isShooting() || arrowAiming || playerAimbot;
-    if (player.tank === 'flame') {
+    if (player.tank === 'clasher') {
+        // Clasher doesn't shoot - it rams enemies!
+    } else if (player.tank === 'flame') {
         if (wantShoot) {
             player.charging = true;
             player.chargeTime = Math.min(player.chargeTime + dt, player.maxChargeTime);
@@ -293,6 +328,7 @@ const TANKS = {
     gold:    { body: '#fd0', barrel: '#fff', accent: '#a80', name: 'Tank', desc: 'Slow fire, huge damage' },
     ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Phaser', desc: '50% phase through attacks' },
     orbit:   { body: '#e4f', barrel: '#fff', accent: '#a0c', name: 'Orbit Master', desc: 'Orbs orbit you. Buy more with score (max 4)' },
+    clasher: { body: '#f60', barrel: '#f60', accent: '#a30', name: 'Clasher', desc: 'Ram enemies to kill them! Q = auto-drive' },
 };
 
 export function getTankDefs() {
@@ -431,6 +467,55 @@ export function renderPlayer(ctx) {
             );
             break;
 
+        case 'clasher':
+            // Clasher - big spiked ram
+            gctx.save();
+            gctx.translate(player.x, player.y);
+            gctx.rotate(a);
+            // Spikes around the body
+            for (let i = 0; i < 8; i++) {
+                const sAngle = (Math.PI * 2 / 8) * i;
+                const sx = Math.cos(sAngle) * (r + 6);
+                const sy = Math.sin(sAngle) * (r + 6);
+                gctx.beginPath();
+                gctx.moveTo(sx, sy);
+                gctx.lineTo(Math.cos(sAngle - 0.2) * r, Math.sin(sAngle - 0.2) * r);
+                gctx.lineTo(Math.cos(sAngle + 0.2) * r, Math.sin(sAngle + 0.2) * r);
+                gctx.closePath();
+                gctx.fillStyle = '#f60';
+                gctx.fill();
+            }
+            // Body
+            gctx.beginPath();
+            gctx.arc(0, 0, r, 0, Math.PI * 2);
+            gctx.fillStyle = '#f60';
+            gctx.fill();
+            gctx.strokeStyle = '#a30';
+            gctx.lineWidth = 3;
+            gctx.stroke();
+            // Inner armor
+            gctx.beginPath();
+            gctx.arc(0, 0, r * 0.6, 0, Math.PI * 2);
+            gctx.fillStyle = '#a30';
+            gctx.fill();
+            // Ram point (front)
+            gctx.beginPath();
+            gctx.moveTo(r + 10, 0);
+            gctx.lineTo(r - 2, -8);
+            gctx.lineTo(r - 2, 8);
+            gctx.closePath();
+            gctx.fillStyle = '#ff0';
+            gctx.fill();
+            gctx.restore();
+
+            // Auto-drive indicator
+            if (player.autoDrive) {
+                gctx.globalAlpha = 0.3 + Math.sin(Date.now() / 150) * 0.15;
+                drawCircle(player.x, player.y, r + 12, '#f60', false);
+                gctx.globalAlpha = 1;
+            }
+            break;
+
         default:
             // Default circle tank
             drawCircle(player.x, player.y, r, bodyColor);
@@ -553,6 +638,14 @@ export function renderPlayer(ctx) {
         } else {
             drawText('MAX ORBS', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
         }
+    }
+}
+
+export function applyTankStats() {
+    if (player.tank === 'clasher') {
+        player.hp = 300;
+        player.maxHp = 300;
+        player.speed = 280;
     }
 }
 

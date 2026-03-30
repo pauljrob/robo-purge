@@ -97,6 +97,11 @@ export function renderHUD(ctx, score) {
         iconX -= 22;
     }
 
+    // Auto-drive indicator (Clasher)
+    if (player.tank === 'clasher' && player.autoDrive) {
+        drawText('AUTO-DRIVE ON', 785, 535, '#f60', 10, 'right');
+    }
+
     // Aim assist indicator
     if (isAimAssist()) {
         drawText('AIM ASSIST', 785, 550, '#4af', 10, 'right');

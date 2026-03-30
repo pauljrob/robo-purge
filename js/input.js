@@ -14,10 +14,7 @@ export function initInput(canvasEl) {
         if (e.key === ' ' || e.key.startsWith('Arrow')) e.preventDefault();
         keys.set(e.key.toLowerCase(), true);
 
-        // Q - toggle aim assist
-        if (e.key === 'q' || e.key === 'Q') {
-            aimAssist = !aimAssist;
-        }
+
 
         // Double-tap shift to toggle auto shoot
         if (e.key === 'Shift') {
@@ -73,5 +70,10 @@ export function resetAutoShoot() {
 }
 
 export function isAimAssist() {
+    return aimAssist;
+}
+
+export function toggleAimAssist() {
+    aimAssist = !aimAssist;
     return aimAssist;
 }

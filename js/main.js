@@ -1,6 +1,6 @@
-import { initInput, isKeyDown, isAimAssist } from './input.js';
+import { initInput, isKeyDown, isAimAssist, toggleAimAssist } from './input.js';
 import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx, screenToWorld } from './renderer.js';
-import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb, buyDrone } from './player.js';
+import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb, buyDrone, applyTankStats } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
 import { updateEnemies, renderEnemies, getEnemies, clearEnemies } from './enemies.js';
 import { updateParticles, renderParticles, clearParticles } from './particles.js';
@@ -104,6 +104,7 @@ function startGame() {
     waveNum = 1;
     resetPlayer(ARENA_W, ARENA_H);
     player.tank = chosenTank;
+    applyTankStats();
     resetUnlocks();
     clearProjectiles();
     clearEnemies();
@@ -314,6 +315,15 @@ function update(dt) {
     // Mute toggle
     if (wasKeyPressed('m')) toggleMute();
 
+    // Q - toggle aim assist or auto-drive for Clasher
+    if (wasKeyPressed('q')) {
+        if (player.tank === 'clasher') {
+            player.autoDrive = !player.autoDrive;
+        } else {
+            toggleAimAssist();
+        }
+    }
+
     // P - open powers menu
     if (wasKeyPressed('p')) {
         openPowersMenu();
@@ -453,19 +463,61 @@ function update(dt) {
         }
     }
 
-    // Collision: enemies vs player (contact damage)
+    // Collision: enemies vs player (contact damage / Clasher ramming)
     for (const e of enemies) {
         if (!e.active) continue;
         if (circleVsCircle(e.x, e.y, e.radius, player.x, player.y, player.radius)) {
-            damagePlayer(15);
-            triggerShake(8);
-            playPlayerHit();
-            // Push enemy back
-            const dx = e.x - player.x;
-            const dy = e.y - player.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            e.x += (dx / dist) * 30;
-            e.y += (dy / dist) * 30;
+            if (player.tank === 'clasher') {
+                // Clasher rams enemies - deals massive damage to them
+                e.hp -= player.clasherDamage;
+                e.flashTimer = 0.1;
+                triggerShake(5);
+                playEnemyHit();
+                spawnExplosion(e.x, e.y, '#f60', 8, 120, 3, 0.3);
+
+                // Small self-damage (10% of normal)
+                if (player.clasherInvincibleTimer <= 0) {
+                    damagePlayer(2);
+                    player.clasherInvincibleTimer = 0.15;
+                }
+
+                // Push enemy back hard
+                const dx = e.x - player.x;
+                const dy = e.y - player.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                e.x += (dx / dist) * 50;
+                e.y += (dy / dist) * 50;
+
+                if (e.hp <= 0) {
+                    e.active = false;
+                    score += e.points;
+                    playEnemyDeath();
+                    spawnExplosion(e.x, e.y, '#f60', 15, 180, 4, 0.5);
+
+                    if (player.lifesteal > 0) {
+                        player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.lifesteal);
+                    }
+                    if (player.explosiveKills) {
+                        for (const e2 of enemies) {
+                            if (!e2.active) continue;
+                            if (circleVsCircle(e.x, e.y, 50, e2.x, e2.y, e2.radius)) {
+                                e2.hp -= 15;
+                                e2.flashTimer = 0.08;
+                            }
+                        }
+                    }
+                }
+            } else {
+                damagePlayer(15);
+                triggerShake(8);
+                playPlayerHit();
+                // Push enemy back
+                const dx = e.x - player.x;
+                const dy = e.y - player.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                e.x += (dx / dist) * 30;
+                e.y += (dy / dist) * 30;
+            }
         }
     }
 
@@ -765,6 +817,34 @@ function drawTankPreview(gctx, id, t, x, y, r) {
             // Barrel
             gctx.fillStyle = t.barrel;
             gctx.fillRect(x - 2, y - r * 0.8 - 12, 4, 14);
+            break;
+
+        case 'clasher': // Clasher - spiked ram ball
+            // Spikes
+            for (let s = 0; s < 8; s++) {
+                const sa = (Math.PI * 2 / 8) * s + Date.now() / 1000;
+                const sx = x + Math.cos(sa) * (r + 4);
+                const sy = y + Math.sin(sa) * (r + 4);
+                gctx.beginPath();
+                gctx.moveTo(sx, sy);
+                gctx.lineTo(x + Math.cos(sa - 0.25) * r, y + Math.sin(sa - 0.25) * r);
+                gctx.lineTo(x + Math.cos(sa + 0.25) * r, y + Math.sin(sa + 0.25) * r);
+                gctx.closePath();
+                gctx.fillStyle = '#f60';
+                gctx.fill();
+            }
+            drawCircle(x, y, r, t.body);
+            gctx.lineWidth = 3;
+            drawCircle(x, y, r, t.accent, false);
+            drawCircle(x, y, r * 0.5, t.accent);
+            // Ram point
+            gctx.beginPath();
+            gctx.moveTo(x, y - r - 8);
+            gctx.lineTo(x - 6, y - r + 2);
+            gctx.lineTo(x + 6, y - r + 2);
+            gctx.closePath();
+            gctx.fillStyle = '#ff0';
+            gctx.fill();
             break;
     }
 }
