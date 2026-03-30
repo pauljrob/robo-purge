@@ -1,5 +1,5 @@
 import { initInput, isKeyDown, isAimAssist } from './input.js';
-import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx } from './renderer.js';
+import { initRenderer, clear, setCamera, beginCamera, endCamera, updateShake, triggerShake, drawText, drawRect, drawCircle, drawLine, getCtx, screenToWorld } from './renderer.js';
 import { player, resetPlayer, updatePlayer, renderPlayer, damagePlayer, getTankDefs, buyOrb, buyDrone } from './player.js';
 import { updateProjectiles, renderProjectiles, getProjectiles, clearProjectiles } from './projectiles.js';
 import { updateEnemies, renderEnemies, getEnemies, clearEnemies } from './enemies.js';
@@ -60,18 +60,39 @@ function wasKeyPressed(key) {
 initRenderer(ctx, canvas.width, canvas.height);
 initInput(canvas);
 
-// Click handler for tank selection
+// Click handler for tank selection and buying orbs/drones
 canvas.addEventListener('click', (e) => {
-    if (state !== 'TANK_SELECT') return;
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    for (const pos of tankSelectPositions) {
-        const dx = mx - pos.x;
-        const dy = my - pos.y;
-        if (dx * dx + dy * dy < pos.r * pos.r) {
-            selectedTankIndex = pos.index;
-            break;
+
+    if (state === 'TANK_SELECT') {
+        for (const pos of tankSelectPositions) {
+            const dx = mx - pos.x;
+            const dy = my - pos.y;
+            if (dx * dx + dy * dy < pos.r * pos.r) {
+                selectedTankIndex = pos.index;
+                break;
+            }
+        }
+    }
+
+    if (state === 'PLAYING') {
+        // Click near player to buy orb/drone
+        const world = screenToWorld(mx, my);
+        const dx = world.x - player.x;
+        const dy = world.y - player.y;
+        const clickDist = dx * dx + dy * dy;
+        const buyRadius = 60;
+
+        if (clickDist < buyRadius * buyRadius) {
+            if (player.tank === 'orbit') {
+                const result = buyOrb(score);
+                if (result.success) { score -= result.cost; playUnlock(); }
+            } else if (player.tank === 'default') {
+                const result = buyDrone(score);
+                if (result.success) { score -= result.cost; playUnlock(); }
+            }
         }
     }
 });

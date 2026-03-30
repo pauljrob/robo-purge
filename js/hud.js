@@ -39,14 +39,14 @@ export function renderHUD(ctx, score) {
 
     // Orbit Master orb buy hint
     if (player.tank === 'orbit' && player.orbs < 4) {
-        drawText(`[B] Buy Orb (${player.nextOrbCost} pts)  Orbs: ${player.orbs}/4`, 785, 42, '#e4f', 10, 'right');
+        drawText(`[B] or Click tank to Buy Orb (${player.nextOrbCost} pts)  Orbs: ${player.orbs}/4`, 785, 42, '#e4f', 10, 'right');
     } else if (player.tank === 'orbit') {
         drawText(`Orbs: ${player.orbs}/4 MAX`, 785, 42, '#ff0', 10, 'right');
     }
 
     // Drone tank buy hint
     if (player.tank === 'default' && player.drones < 4) {
-        drawText(`[B] Buy Drone (${player.nextDroneCost} pts)  Drones: ${player.drones}/4`, 785, 42, '#4af', 10, 'right');
+        drawText(`[B] or Click tank to Buy Drone (${player.nextDroneCost} pts)  Drones: ${player.drones}/4`, 785, 42, '#4af', 10, 'right');
     } else if (player.tank === 'default') {
         drawText(`Drones: ${player.drones}/4 MAX`, 785, 42, '#ff0', 10, 'right');
     }
