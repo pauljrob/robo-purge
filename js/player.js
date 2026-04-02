@@ -198,39 +198,9 @@ export function updatePlayer(dt, arenaW, arenaH) {
         }
     }
 
-    // Orbit logic (works for any tank with orbs)
+    // Orbit logic (works for any tank with orbs) - orbs only do contact damage, no shooting
     if (player.orbs > 0) {
         player.orbAngle += dt * 2;
-        player.orbAttackTimer -= dt;
-
-        // Each orb attacks independently
-        if (player.orbAttackTimer <= 0) {
-            player.orbAttackTimer = 0.8;
-            const enemies = getEnemies();
-            for (let i = 0; i < player.orbs; i++) {
-                const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
-                const orbDist = 45;
-                const ox = player.x + Math.cos(orbA) * orbDist;
-                const oy = player.y + Math.sin(orbA) * orbDist;
-
-                // Find nearest enemy to this orb
-                let nearest = null;
-                let nearestDist = Infinity;
-                for (const en of enemies) {
-                    if (!en.active) continue;
-                    const d = distanceSq(ox, oy, en.x, en.y);
-                    if (d < nearestDist) { nearestDist = d; nearest = en; }
-                }
-                if (nearest) {
-                    const shotAngle = angleToTarget(ox, oy, nearest.x, nearest.y);
-                    spawnProjectile(ox, oy,
-                        Math.cos(shotAngle) * 400, Math.sin(shotAngle) * 400,
-                        15, 'player', '#e4f', 3, false, false, 0, true
-                    );
-                    spawnExplosion(ox, oy, '#e4f', 3, 40, 2, 0.1);
-                }
-            }
-        }
     }
 
     // Tank-specific modifiers
