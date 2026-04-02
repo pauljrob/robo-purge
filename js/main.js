@@ -454,9 +454,10 @@ function update(dt) {
         }
     }
 
-    // Collision: enemy projectiles vs player
+    // Collision: enemy projectiles vs player (Bullet Phaser is immune)
     for (const p of projectiles) {
         if (!p.active || p.owner !== 'enemy') continue;
+        if (player.tank === 'bphaser') continue; // bullets pass through
         if (circleVsCircle(p.x, p.y, p.size, player.x, player.y, player.radius)) {
             damagePlayer(p.damage);
             p.active = false;
@@ -876,6 +877,31 @@ function drawTankPreview(gctx, id, t, x, y, r) {
             gctx.closePath();
             gctx.fillStyle = '#ff0';
             gctx.fill();
+            break;
+
+        case 'bphaser': // Bullet Phaser - ghostly
+            gctx.globalAlpha *= 0.5;
+            drawCircle(x, y, r, '#0ff');
+            gctx.globalAlpha = gctx.globalAlpha * 2;
+            drawCircle(x, y, r * 0.5, '#088');
+            // Animated dashed ring
+            gctx.setLineDash([4, 4]);
+            gctx.lineDashOffset = Date.now() / 100;
+            drawCircle(x, y, r + 4, '#0ff', false);
+            gctx.setLineDash([]);
+            gctx.lineDashOffset = 0;
+            // Barrel
+            gctx.fillStyle = '#fff';
+            gctx.fillRect(x - 2, y - r - 12, 4, 14);
+            // Bullet icons passing through
+            const bTime = Date.now() / 400;
+            for (let b = 0; b < 3; b++) {
+                const bx = x - 15 + b * 15;
+                const by = y + Math.sin(bTime + b) * 8;
+                gctx.globalAlpha *= 0.4;
+                drawCircle(bx, by, 2, '#f66');
+                gctx.globalAlpha = gctx.globalAlpha / 0.4;
+            }
             break;
     }
 }

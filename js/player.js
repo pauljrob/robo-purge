@@ -299,6 +299,7 @@ const TANKS = {
     ice:     { body: '#8ef', barrel: '#fff', accent: '#4af', name: 'Phaser', desc: '50% phase through attacks' },
     orbit:   { body: '#e4f', barrel: '#fff', accent: '#a0c', name: 'Orbit Master', desc: 'Orbs orbit you. Buy more with score (max 4)' },
     clasher: { body: '#f60', barrel: '#f60', accent: '#a30', name: 'Clasher', desc: 'Ram enemies to kill them! Q = auto-drive' },
+    bphaser: { body: '#0ff', barrel: '#fff', accent: '#088', name: 'Bullet Phaser', desc: 'Enemy bullets pass through you!' },
 };
 
 export function getTankDefs() {
@@ -484,6 +485,29 @@ export function renderPlayer(ctx) {
                 drawCircle(player.x, player.y, r + 12, '#f60', false);
                 gctx.globalAlpha = 1;
             }
+            break;
+
+        case 'bphaser':
+            // Bullet Phaser - ghostly translucent tank
+            gctx.globalAlpha = 0.4 + Math.sin(Date.now() / 200) * 0.15;
+            drawCircle(player.x, player.y, r, '#0ff');
+            gctx.globalAlpha = 0.6;
+            drawCircle(player.x, player.y, r * 0.6, '#088');
+            gctx.globalAlpha = 1;
+            // Phasing ring
+            gctx.setLineDash([4, 4]);
+            const dashOffset = Date.now() / 100;
+            gctx.lineDashOffset = dashOffset;
+            drawCircle(player.x, player.y, r + 4, '#0ff', false);
+            gctx.setLineDash([]);
+            gctx.lineDashOffset = 0;
+            // Barrel
+            drawLine(
+                player.x, player.y,
+                player.x + Math.cos(a) * (r + 8),
+                player.y + Math.sin(a) * (r + 8),
+                '#fff', 3
+            );
             break;
 
         default:
