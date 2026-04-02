@@ -198,10 +198,8 @@ export function updatePlayer(dt, arenaW, arenaH) {
         }
     }
 
-    // Orbit logic (works for any tank with orbs) - orbs only do contact damage, no shooting
-    if (player.orbs > 0) {
-        player.orbAngle += dt * 2;
-    }
+    // Orbit logic - orbs stay in a fixed ring, no spinning
+
 
     // Tank-specific modifiers
     let fireRateMult = 1;
@@ -605,32 +603,28 @@ export function renderPlayer(ctx) {
         gctx.globalAlpha = 1;
     }
 
-    // Orbs (Orbit Master or ORB code)
+    // Orbs (Orbit Master or ORB code) - rendered as a ring for performance
     if (player.orbs > 0) {
         const orbDist = 45;
-        for (let i = 0; i < player.orbs; i++) {
-            const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
-            const ox = player.x + Math.cos(orbA) * orbDist;
-            const oy = player.y + Math.sin(orbA) * orbDist;
+        // Glowing ring
+        gctx.shadowBlur = 8 + Math.min(player.orbs, 20);
+        gctx.shadowColor = '#e4f';
+        gctx.lineWidth = Math.min(3 + player.orbs * 0.5, 15);
+        drawCircle(player.x, player.y, orbDist, '#e4f', false);
+        gctx.shadowBlur = 0;
+        gctx.lineWidth = 2;
 
-            // Orb glow
-            gctx.shadowBlur = 12;
-            gctx.shadowColor = '#e4f';
-            drawCircle(ox, oy, 7, '#e4f');
-            drawCircle(ox, oy, 4, '#fff');
-            gctx.shadowBlur = 0;
+        // Inner ring
+        gctx.globalAlpha = 0.3;
+        drawCircle(player.x, player.y, orbDist - 5, '#a0c', false);
+        gctx.globalAlpha = 1;
 
-            // Orbit trail
-            gctx.globalAlpha = 0.15;
-            drawCircle(player.x, player.y, orbDist, '#e4f', false);
-            gctx.globalAlpha = 1;
-        }
+        // Orb count
+        drawText(`${player.orbs}`, player.x, player.y + player.radius + 25, '#e4f', 9, 'center');
 
-        // Show next orb cost if under max
-        if (player.orbs < 4) {
-            drawText(`Next orb: ${player.nextOrbCost} pts`, player.x, player.y + player.radius + 25, '#e4f', 9, 'center');
-        } else {
-            drawText('MAX ORBS', player.x, player.y + player.radius + 25, '#ff0', 9, 'center');
+        // Show buy hint for orbit tank
+        if (player.tank === 'orbit' && player.orbs < 4) {
+            drawText(`[B] +Orb (${player.nextOrbCost})`, player.x, player.y + player.radius + 35, '#a0c', 8, 'center');
         }
 
         // Auto-drive indicator ring

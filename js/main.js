@@ -467,28 +467,27 @@ function update(dt) {
         }
     }
 
-    // Collision: orbs vs enemies (contact damage)
+    // Collision: orbs vs enemies (ring collision - damage scales with orb count)
     if (player.orbs > 0) {
         const orbDist = 45;
-        for (let i = 0; i < player.orbs; i++) {
-            const orbA = player.orbAngle + (Math.PI * 2 / player.orbs) * i;
-            const ox = player.x + Math.cos(orbA) * orbDist;
-            const oy = player.y + Math.sin(orbA) * orbDist;
-            for (const e of enemies) {
-                if (!e.active) continue;
-                if (circleVsCircle(ox, oy, 7, e.x, e.y, e.radius)) {
-                    e.hp -= 25;
-                    e.flashTimer = 0.08;
-                    playEnemyHit();
-                    spawnExplosion(ox, oy, '#e4f', 5, 80, 2, 0.2);
-                    if (e.hp <= 0) {
-                        e.active = false;
-                        score += e.points;
-                        playEnemyDeath();
-                        spawnExplosion(e.x, e.y, '#e4f', 12, 150, 3, 0.5);
-                        if (player.lifesteal > 0) {
-                            player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.lifesteal);
-                        }
+        const ringThickness = Math.min(15, 7 + player.orbs * 0.5);
+        const orbDamage = 25 * Math.min(player.orbs, 100); // scales up, capped
+        for (const e of enemies) {
+            if (!e.active) continue;
+            const dx = e.x - player.x;
+            const dy = e.y - player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            // Check if enemy is near the orb ring
+            if (Math.abs(dist - orbDist) < ringThickness + e.radius) {
+                e.hp -= orbDamage * (1/60); // damage per frame
+                e.flashTimer = 0.08;
+                if (e.hp <= 0) {
+                    e.active = false;
+                    score += e.points;
+                    playEnemyDeath();
+                    spawnExplosion(e.x, e.y, '#e4f', 12, 150, 3, 0.5);
+                    if (player.lifesteal > 0) {
+                        player.hp = Math.min(player.maxHp, player.hp + player.maxHp * player.lifesteal);
                     }
                 }
             }
