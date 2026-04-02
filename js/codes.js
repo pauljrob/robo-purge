@@ -28,7 +28,7 @@ const CODE_REGISTRY = new Map([
     ['GOLDTANK',    { type: 'tank',     id: 'gold',      name: 'Gold Tank' }],
     ['FROST',       { type: 'tank',     id: 'ice',       name: 'Frost Tank' }],
     ['SKIP',        { type: 'instant',  id: 'skip',      name: 'Skip Wave!' }],
-    ['ORB',         { type: 'instant',  id: 'orb',       name: '20 Orbs!' }],
+    ['ORB',         { type: 'instant',  id: 'orb',       name: '100,000 Orbs!' }],
 ]);
 
 export function validateCode(input) {

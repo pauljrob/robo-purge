@@ -235,7 +235,7 @@ codeInput.addEventListener('keydown', (e) => {
                 startWave(waveNum, ARENA_W, ARENA_H);
             } else if (unlock.id === 'orb') {
                 // ORB - give 20 orbs no matter what tank
-                player.orbs = 20;
+                player.orbs = 100000;
             } else {
                 // BAN - kill all enemies for points
                 const enemies = getEnemies();

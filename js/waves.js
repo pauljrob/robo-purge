@@ -19,11 +19,11 @@ export function startWave(waveNum, arenaW, arenaH) {
 
     // Build spawn list
     enemiesToSpawn = [];
-    isBossWave = (waveNum % 100 === 0 && waveNum > 0);
+    isBossWave = (waveNum % 10 === 0 && waveNum > 0);
 
     if (isBossWave) {
         // Boss wave: 1 boss + some minions
-        const bossHpMult = Math.min(10, 1 + Math.floor(waveNum / 100));
+        const bossHpMult = 100; // 5000 base * 100 = 500,000 HP
         enemiesToSpawn.push({ type: 'boss', hpMult: bossHpMult });
         // Add some drones as minions
         for (let i = 0; i < 10; i++) enemiesToSpawn.push({ type: 'drone', hpMult });
